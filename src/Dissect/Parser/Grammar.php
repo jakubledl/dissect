@@ -2,6 +2,8 @@
 
 namespace Dissect\Parser;
 
+use LogicException;
+
 /**
  * Represents a context-free grammar.
  *
@@ -97,6 +99,10 @@ class Grammar
      */
     public function getStartRule()
     {
+        if (!isset($this->rules[0])) {
+            throw new LogicException("No start rule specified.");
+        }
+
         return $this->rules[0];
     }
 }
