@@ -2,8 +2,8 @@
 
 namespace Dissect\Lexer;
 
-use Dissect\Lexer\Recognizer\Recognizer;
-use InvalidArgumentException;
+use Dissect\Lexer\Recognizer\RegexRecognizer;
+use Dissect\Lexer\Recognizer\SimpleRecognizer;
 use LogicException;
 
 /**
@@ -16,6 +16,8 @@ class StatefulLexer extends AbstractLexer
 {
     protected $states = array();
     protected $stateStack = array();
+    protected $stateBeingBuilt = null;
+    protected $typeBeingBuilt = null;
 
     /**
      * Signifies that no action should be taken on encountering a token.
@@ -29,39 +31,75 @@ class StatefulLexer extends AbstractLexer
     const POP_STATE = 1;
 
     /**
-     * Adds a new recognizer to a given lexer state.
+     * Adds a new token definition. If given only one argument,
+     * it assumes that the token type and recognized value are
+     * identical.
      *
-     * @param string $type The token type for this recognizer.
-     * @param \Dissect\Lexer\Recognizer\Recognizer The recognizer.
-     * @param string $state The lexer state this recognizer belongs to.
-     * @param mixed $action The action the lexer should take when
-     * encountering this token (defaults to no action).
+     * @param string $type The token type.
+     * @param string $value The value to be recognized.
      *
-     * @throws \InvalidArgumentException When the specified state is not
-     * registered in the lexer.
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
      */
-    public function addRecognizer($type, Recognizer $recognizer, $state, $action = self::NO_ACTION)
+    public function token($type, $value = null)
     {
-        if (!isset($this->states[$state])) {
-            throw new InvalidArgumentException(sprintf(
-                'The state "%s" is not defined.',
-                $state
-            ));
+        if ($this->stateBeingBuilt === null) {
+            throw new LogicException("Define a lexer state first.");
         }
 
-        $this->states[$state]['recognizers'][$type] = $recognizer;
-        $this->states[$state]['actions'][$type] = $action;
+        if ($value === null) {
+            $value = $type;
+        }
+
+        $this->states[$this->stateBeingBuilt]['recognizers'][$type] =
+            new SimpleRecognizer($value);
+
+        $this->states[$this->stateBeingBuilt]['actions'][$type] = self::NO_ACTION;
+
+        $this->typeBeingBuilt = $type;
+
+        return $this;
     }
 
     /**
-     * Marks certain token types to be skipped in given state.
+     * Adds a new regex token definition.
      *
-     * @param string $state The state this applies to.
-     * @param string[] $types The token types to be skipped.
+     * @param string $type The token type.
+     * @param string $regex The regular expression used to match the token.
+     *
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
      */
-    public function skipTokens($state, array $types)
+    public function regex($type, $regex)
     {
-        $this->states[$state]['skip_tokens'] = $types;
+        if ($this->stateBeingBuilt === null) {
+            throw new LogicException("Define a lexer state first.");
+        }
+
+        $this->states[$this->stateBeingBuilt]['recognizers'][$type] =
+            new RegexRecognizer($regex);
+
+        $this->states[$this->stateBeingBuilt]['actions'][$type] = self::NO_ACTION;
+
+        $this->typeBeingBuilt = $type;
+
+        return $this;
+    }
+
+    /**
+     * Marks the token types given as arguments to be skipped.
+     *
+     * @param mixed $type,... Unlimited number of token types.
+     *
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
+     */
+    public function skip()
+    {
+        if ($this->stateBeingBuilt === null) {
+            throw new LogicException("Define a lexer state first.");
+        }
+
+        $this->states[$this->stateBeingBuilt]['skip_tokens'] = func_get_args();
+
+        return $this;
     }
 
     /**
@@ -69,31 +107,51 @@ class StatefulLexer extends AbstractLexer
      *
      * @param string $state The new state name.
      *
-     * @throws \InvalidArgumentException When the state is already defined.
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
      */
-    public function addState($state)
+    public function state($state)
     {
-        if (isset($this->states[$state])) {
-            throw new InvalidArgumentException(sprintf(
-                'State "%s" is already defined',
-            $state));
-        }
+        $this->stateBeingBuilt = $state;
 
         $this->states[$state] = array(
             'recognizers' => array(),
             'actions' => array(),
             'skip_tokens' => array(),
         );
+
+        return $this;
     }
 
     /**
      * Sets the starting state for the lexer.
      *
      * @param string $state The name of the starting state.
+     *
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
      */
-    public function setStartingState($state)
+    public function start($state)
     {
         $this->stateStack[] = $state;
+
+        return $this;
+    }
+
+    /**
+     * Sets an action for the token type that is currently being built.
+     *
+     * @param mixed $action The action to take.
+     *
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
+     */
+    public function action($action)
+    {
+        if ($this->stateBeingBuilt === null || $this->typeBeingBuilt === null) {
+            throw new LogicException("Define a lexer state and type first.");
+        }
+
+        $this->states[$this->stateBeingBuilt]['actions'][$this->typeBeingBuilt] = $action;
+
+        return $this;
     }
 
     /**

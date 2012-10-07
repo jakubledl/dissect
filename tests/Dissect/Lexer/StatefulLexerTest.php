@@ -17,23 +17,12 @@ class StatefulLexerTest extends PHPUnit_Framework_TestCase
 
     /**
      * @test
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage The state "non-existent-state" is not defined.
+     * @expectedException LogicException
+     * @expectedExceptionMessage Define a lexer state first.
      */
-    public function addRecognizerShouldThrowAnExceptionForNonexistentState()
+    public function addingNewTokenShouldThrowAnExceptionWhenNoStateIsBeingBuilt()
     {
-        $this->lexer->addRecognizer('WORD', new RegexRecognizer('/[a-z]+/'),
-            'non-existent-state');
-    }
-
-    /**
-     * @test
-     * @expectedException InvalidArgumentException
-     */
-    public function addStateShouldThrowAnExceptionWhenTheStateAlreadyExists()
-    {
-        $this->lexer->addState('root');
-        $this->lexer->addState('root');
+        $this->lexer->regex('WORD', '/[a-z]+/');
     }
 
     /**
@@ -42,8 +31,7 @@ class StatefulLexerTest extends PHPUnit_Framework_TestCase
      */
     public function anExceptionShouldBeThrownOnLexingWithoutAStartingState()
     {
-        $this->lexer->addState('root');
-
+        $this->lexer->state('root');
         $this->lexer->lex('foo');
     }
 
@@ -52,22 +40,17 @@ class StatefulLexerTest extends PHPUnit_Framework_TestCase
      */
     public function theStateMechanismShouldCorrectlyPushAndPopStatesFromTheStack()
     {
-        $this->lexer->addState('root');
-        $this->lexer->addState('string');
+        $this->lexer->state('root')
+            ->regex('WORD', '/[a-z]+/')
+            ->regex('WS', "/[ \r\n\t]+/")
+            ->token('"')->action('string')
+            ->skip('WS');
 
-        // root recognizers
-        $this->lexer->addRecognizer('WORD', new RegexRecognizer('/[a-z]+/'), 'root');
-        $this->lexer->addRecognizer('WS', new RegexRecognizer("/[ \r\n\t]+/"), 'root');
-        $this->lexer->addRecognizer('QUOTE', new SimpleRecognizer('"'), 'root', 'string');
-        $this->lexer->skipTokens('root', array('WS'));
+        $this->lexer->state('string')
+            ->regex('STRING_CONTENTS', '/(\\\\"|[^"])*/')
+            ->token('"')->action(StatefulLexer::POP_STATE);
 
-        // string recognizers
-        $this->lexer->addRecognizer('STRING_CONTENTS', new RegexRecognizer(
-            '/(\\\\"|[^"])*/'), 'string');
-        $this->lexer->addRecognizer('QUOTE', new SimpleRecognizer('"'), 'string',
-            StatefulLexer::POP_STATE);
-
-        $this->lexer->setStartingState('root');
+        $this->lexer->start('root');
 
         $stream = $this->lexer->lex('foo bar "long \\" string" baz quux');
 
@@ -82,15 +65,14 @@ class StatefulLexerTest extends PHPUnit_Framework_TestCase
      */
     public function defaultActionShouldBeNop()
     {
-        $this->lexer->addState('root');
-        $this->lexer->addState('string');
+        $this->lexer->state('root')
+            ->regex('WORD', '/[a-z]+/')
+            ->regex('WS', "/[ \r\n\t]+/")
+            ->skip('WS');
 
-        $this->lexer->addRecognizer('WORD', new RegexRecognizer('/[a-z]+/'), 'root');
-        $this->lexer->addRecognizer('WS', new RegexRecognizer("/[ \r\n\t]+/"), 'root');
+        $this->lexer->state('string');
 
-        $this->lexer->skipTokens('root', array('WS'));
-
-        $this->lexer->setStartingState('root');
+        $this->lexer->start('root');
 
         $stream = $this->lexer->lex('foo bar');
         $this->assertEquals(3, $stream->count());
