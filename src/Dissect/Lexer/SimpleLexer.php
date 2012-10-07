@@ -2,7 +2,8 @@
 
 namespace Dissect\Lexer;
 
-use Dissect\Lexer\Recognizer\Recognizer;
+use Dissect\Lexer\Recognizer\RegexRecognizer;
+use Dissect\Lexer\Recognizer\SimpleRecognizer;
 
 /**
  * SimpleLexer uses specified recognizers
@@ -23,24 +24,53 @@ class SimpleLexer extends AbstractLexer
     protected $recognizers = array();
 
     /**
-     * Marks certain token types to be skipped.
+     * Adds a new token definition. If given only one argument,
+     * it assumes that the token type and recognized value are
+     * identical.
      *
-     * @param string[] $types The token types to be skipped.
+     * @param string $type The token type.
+     * @param string $value The value to be recognized.
+     *
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
      */
-    public function skipTokens(array $types)
+    public function token($type, $value = null)
     {
-        $this->skipTokens = $types;
+        if ($value) {
+            $this->recognizers[$type] = new SimpleRecognizer($value);
+        } else {
+            $this->recognizers[$type] = new SimpleRecognizer($type);
+        }
+
+        return $this;
     }
 
     /**
-     * Adds a recognizer.
+     * Adds a new regex token definition.
      *
-     * @param string $type The token type for this recognizer.
-     * @param \Dissect\Lexer\Recognizer\Recognizer $recognizer The recognizer.
+     * @param string $type The token type.
+     * @param string $regex The regular expression used to match the token.
+     *
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
      */
-    public function addRecognizer($type, Recognizer $recognizer)
+    public function regex($type, $regex)
     {
-        $this->recognizers[$type] = $recognizer;
+        $this->recognizers[$type] = new RegexRecognizer($regex);
+
+        return $this;
+    }
+
+    /**
+     * Marks the token types given as arguments to be skipped.
+     *
+     * @param mixed $type,... Unlimited number of token types.
+     *
+     * @return \Dissect\Lexer\SimpleLexer This instance for fluent interface.
+     */
+    public function skip()
+    {
+        $this->skipTokens = func_get_args();
+
+        return $this;
     }
 
     /**

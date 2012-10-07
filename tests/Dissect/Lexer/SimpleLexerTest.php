@@ -14,15 +14,15 @@ class SimpleLexerTest extends PHPUnit_Framework_TestCase
     {
         $this->lexer = new SimpleLexer();
 
-        $this->lexer->addRecognizer('A', new SimpleRecognizer('a'));
-        $this->lexer->addRecognizer('LEFT_PAREN', new SimpleRecognizer('('));
-        $this->lexer->addRecognizer('B', new SimpleRecognizer('b'));
-        $this->lexer->addRecognizer('RIGHT_PAREN', new SimpleRecognizer(')'));
-        $this->lexer->addRecognizer('C', new SimpleRecognizer('c'));
+        $this->lexer
+            ->token('A', 'a')
+            ->token('(')
+            ->token('B', 'b')
+            ->token(')')
+            ->token('C', 'c')
+            ->regex('WS', "/[ \n\t\r]+/")
 
-        $this->lexer->addRecognizer('WS', new RegexRecognizer("/[ \n\t\r]+/"));
-
-        $this->lexer->skipTokens(array('WS'));
+            ->skip('WS');
     }
 
     /**
@@ -33,7 +33,7 @@ class SimpleLexerTest extends PHPUnit_Framework_TestCase
         $stream = $this->lexer->lex('a (b) c');
 
         $this->assertEquals(6, $stream->count()); // with EOF
-        $this->assertEquals('LEFT_PAREN', $stream->get(1)->getType());
+        $this->assertEquals('(', $stream->get(1)->getType());
         $this->assertEquals(1, $stream->get(3)->getLine());
         $this->assertEquals(4, $stream->get(2)->getOffset());
         $this->assertEquals('C', $stream->get(4)->getType());
@@ -56,8 +56,8 @@ class SimpleLexerTest extends PHPUnit_Framework_TestCase
      */
     public function simpleLexerShouldReturnTheBestMatch()
     {
-        $this->lexer->addRecognizer('CLASS', new SimpleRecognizer('class'));
-        $this->lexer->addRecognizer('WORD', new RegexRecognizer('/[a-z]+/'));
+        $this->lexer->token('CLASS', 'class');
+        $this->lexer->regex('WORD', '/[a-z]+/');
 
         $stream = $this->lexer->lex('class classloremipsum');
 

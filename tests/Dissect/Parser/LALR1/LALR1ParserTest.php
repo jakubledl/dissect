@@ -17,19 +17,19 @@ class LALR1ParserTest extends PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->lexer = new SimpleLexer();
-        $this->lexer->addRecognizer('INT', new RegexRecognizer('/[1-9][0-9]*/'));
-        $this->lexer->addRecognizer('LPAREN', new SimpleRecognizer('('));
-        $this->lexer->addRecognizer('RPAREN', new SimpleRecognizer(')'));
-        $this->lexer->addRecognizer('PLUS', new SimpleRecognizer('+'));
-        $this->lexer->addRecognizer('POW', new SimpleRecognizer('**'));
-        $this->lexer->addRecognizer('TIMES', new SimpleRecognizer('*'));
-        $this->lexer->addRecognizer('WSP', new RegexRecognizer("/[ \r\n\t]+/"));
-        $this->lexer->skipTokens(array('WSP'));
+        $this->lexer->regex('INT', '/[1-9][0-9]*/');
+        $this->lexer->token('(');
+        $this->lexer->token(')');
+        $this->lexer->token('+');
+        $this->lexer->token('**');
+        $this->lexer->token('*');
+        $this->lexer->regex('WSP', "/[ \r\n\t]+/");
+        $this->lexer->skip('WSP');
 
         $grammar = new Grammar();
 
         // AdditiveExpr
-        $grammar->addRule('AdditiveExpr', array('AdditiveExpr', 'PLUS', 'MultiplicativeExpr'))
+        $grammar->addRule('AdditiveExpr', array('AdditiveExpr', '+', 'MultiplicativeExpr'))
             ->setCallback(function ($left, $plus, $right) {
                 return $left + $right;
             });
@@ -37,7 +37,7 @@ class LALR1ParserTest extends PHPUnit_Framework_TestCase
 
 
         // MultiplicativeExpr
-        $grammar->addRule('MultiplicativeExpr', array('MultiplicativeExpr', 'TIMES', 'PowerExpr'))
+        $grammar->addRule('MultiplicativeExpr', array('MultiplicativeExpr', '*', 'PowerExpr'))
             ->setCallback(function ($left, $times, $right) {
                 return $left * $right;
             });
@@ -45,7 +45,7 @@ class LALR1ParserTest extends PHPUnit_Framework_TestCase
 
 
         // PowerExpr
-        $grammar->addRule('PowerExpr', array('PrimaryExpr', 'POW', 'PowerExpr'))
+        $grammar->addRule('PowerExpr', array('PrimaryExpr', '**', 'PowerExpr'))
             ->setCallback(function ($left, $pow, $right) {
                 return pow($left, $right);
             });
@@ -53,7 +53,7 @@ class LALR1ParserTest extends PHPUnit_Framework_TestCase
 
 
         // PrimaryExpr
-        $grammar->addRule('PrimaryExpr', array('LPAREN', 'AdditiveExpr', 'RPAREN'))
+        $grammar->addRule('PrimaryExpr', array('(', 'AdditiveExpr', ')'))
             ->setCallback(function ($lparen, $expr, $rparen) {
                 return $expr;
             });
@@ -85,8 +85,8 @@ class LALR1ParserTest extends PHPUnit_Framework_TestCase
             $this->parser->parse($this->lexer->lex('6 ** ( * 5'));
             $this->fail('Expected an UnexpectedTokenException.');
         } catch (UnexpectedTokenException $e) {
-            $this->assertEquals('TIMES', $e->getToken()->getType());
-            $this->assertEquals(array('LPAREN', 'INT'), $e->getExpected());
+            $this->assertEquals('*', $e->getToken()->getType());
+            $this->assertEquals(array('(', 'INT'), $e->getExpected());
         }
     }
 }
