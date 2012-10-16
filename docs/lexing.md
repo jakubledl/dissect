@@ -134,4 +134,12 @@ which case the lexer goes to the state specified by the string, or
 state of the stack, essentialy going back to previous state.
 Finally, we tell the lexer in which state to start by calling `start`.
 
+Continue
+--------
+
+Now that we've demonstrated how to perform lexical analysis with
+Dissect, we can move onto syntactical analysis, commonly known as
+[parsing][parsing].
+
 [tokenstream]: https://github.com/jakubledl/dissect/blob/master/src/Dissect/Lexer/TokenStream/TokenStream.php
+[parsing]: parsing.md
