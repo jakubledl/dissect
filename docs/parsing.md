@@ -185,7 +185,11 @@ $parseTable = $analyzer->createParseTable($grammar);
 ```
 
 The table is just a regular PHP array, so it can be serialized,
-`var_export`ed or whatever to save it to a file.
+`var_export`ed or whatever you need to do to save it to a file.
+
+You can then pass the table to the parser as the second constructor
+argument. The grammar still needs to be passed, since it contains the
+callbacks used to evaluate the rules.
 
 [twigparser]: https://github.com/fabpot/Twig/blob/master/lib/Twig/Parser.php
 [twig]: https://github.com/fabpot/Twig
