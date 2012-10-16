@@ -1,5 +1,14 @@
 {
     "name": "jakubledl/dissect",
+    "description": "Lexing and parsing in pure PHP",
+    "keywords": ["lexing", "parsing", "ast", "parser"],
+    "homepage": "https://github.com/jakubledl/dissect",
+    "authors": [
+        {
+            "name": "Jakub Lédl",
+            "email": "jakubledl@gmail.com"
+        }
+    ],
 
     "require": {
         "php": ">=5.3.0"
