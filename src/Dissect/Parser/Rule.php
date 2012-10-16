@@ -10,7 +10,7 @@ namespace Dissect\Parser;
  *
  * would be written like this:
  *
- * $grammar->addRule('A', array('a', 'b', 'c'));
+ * $grammar->rule('A', array('a', 'b', 'c'));
  *
  * @author Jakub Lédl <jakubledl@gmail.com>
  */
@@ -102,7 +102,7 @@ class Rule
      *
      * @param callable $callback The callback.
      */
-    public function setCallback($callback)
+    public function call($callback)
     {
         $this->callback = $callback;
     }

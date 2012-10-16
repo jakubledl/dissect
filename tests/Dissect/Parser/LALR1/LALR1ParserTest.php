@@ -29,40 +29,40 @@ class LALR1ParserTest extends PHPUnit_Framework_TestCase
         $grammar = new Grammar();
 
         // AdditiveExpr
-        $grammar->addRule('AdditiveExpr', array('AdditiveExpr', '+', 'MultiplicativeExpr'))
-            ->setCallback(function ($left, $plus, $right) {
+        $grammar->rule('AdditiveExpr', array('AdditiveExpr', '+', 'MultiplicativeExpr'))
+            ->call(function ($left, $plus, $right) {
                 return $left + $right;
             });
-        $grammar->addRule('AdditiveExpr', array('MultiplicativeExpr'));
+        $grammar->rule('AdditiveExpr', array('MultiplicativeExpr'));
 
 
         // MultiplicativeExpr
-        $grammar->addRule('MultiplicativeExpr', array('MultiplicativeExpr', '*', 'PowerExpr'))
-            ->setCallback(function ($left, $times, $right) {
+        $grammar->rule('MultiplicativeExpr', array('MultiplicativeExpr', '*', 'PowerExpr'))
+            ->call(function ($left, $times, $right) {
                 return $left * $right;
             });
-        $grammar->addRule('MultiplicativeExpr', array('PowerExpr'));
+        $grammar->rule('MultiplicativeExpr', array('PowerExpr'));
 
 
         // PowerExpr
-        $grammar->addRule('PowerExpr', array('PrimaryExpr', '**', 'PowerExpr'))
-            ->setCallback(function ($left, $pow, $right) {
+        $grammar->rule('PowerExpr', array('PrimaryExpr', '**', 'PowerExpr'))
+            ->call(function ($left, $pow, $right) {
                 return pow($left, $right);
             });
-        $grammar->addRule('PowerExpr', array('PrimaryExpr'));
+        $grammar->rule('PowerExpr', array('PrimaryExpr'));
 
 
         // PrimaryExpr
-        $grammar->addRule('PrimaryExpr', array('(', 'AdditiveExpr', ')'))
-            ->setCallback(function ($lparen, $expr, $rparen) {
+        $grammar->rule('PrimaryExpr', array('(', 'AdditiveExpr', ')'))
+            ->call(function ($lparen, $expr, $rparen) {
                 return $expr;
             });
-        $grammar->addRule('PrimaryExpr', array('INT'))
-            ->setCallback(function ($value) {
+        $grammar->rule('PrimaryExpr', array('INT'))
+            ->call(function ($value) {
                 return (int)$value;
             });
 
-        $grammar->setStartRule('AdditiveExpr');
+        $grammar->start('AdditiveExpr');
 
         $this->parser = new LALR1Parser($grammar);
     }

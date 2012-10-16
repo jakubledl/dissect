@@ -18,7 +18,7 @@ class GrammarTest extends PHPUnit_Framework_TestCase
      */
     public function addRuleShouldCreateANewRuleAndNumberItAutomatically()
     {
-        $rule = $this->grammar->addRule('Foo', array('x', 'y', 'z'));
+        $rule = $this->grammar->rule('Foo', array('x', 'y', 'z'));
 
         $this->assertInstanceOf('Dissect\\Parser\\Rule', $rule);
         $this->assertEquals(1, $rule->getNumber());
@@ -32,8 +32,8 @@ class GrammarTest extends PHPUnit_Framework_TestCase
      */
     public function setStartRuleShouldAugmentTheGrammarWithASpecialRuleAtPosition0()
     {
-        $this->grammar->addRule('Foo', array('x', 'y', 'z'));
-        $this->grammar->setStartRule('Foo');
+        $this->grammar->rule('Foo', array('x', 'y', 'z'));
+        $this->grammar->start('Foo');
 
         $rule = $this->grammar->getStartRule();
 

@@ -15,21 +15,21 @@ class ConflictsTest extends PHPUnit_Framework_TestCase
     public function analyzerShouldThrowAnExceptionOnAReduceReduceConflict()
     {
         $grammar = new Grammar();
-        $grammar->addRule('S', array('a', 'a', 'A'));
-        $grammar->addRule('S', array('a', 'b', 'B'));
+        $grammar->rule('S', array('a', 'a', 'A'));
+        $grammar->rule('S', array('a', 'b', 'B'));
 
-        $grammar->addRule('A', array('C', 'a'));
-        $grammar->addRule('A', array('D', 'b'));
+        $grammar->rule('A', array('C', 'a'));
+        $grammar->rule('A', array('D', 'b'));
 
-        $grammar->addRule('B', array('C', 'b'));
-        $grammar->addRule('B', array('D', 'a'));
+        $grammar->rule('B', array('C', 'b'));
+        $grammar->rule('B', array('D', 'a'));
 
-        $grammar->addRule('C', array('E'));
-        $grammar->addRule('D', array('E'));
+        $grammar->rule('C', array('E'));
+        $grammar->rule('D', array('E'));
 
-        $grammar->addRule('E', array());
+        $grammar->rule('E', array());
 
-        $grammar->setStartRule('S');
+        $grammar->start('S');
 
         $analyzer = new Analyzer();
 
@@ -46,8 +46,8 @@ class ConflictsTest extends PHPUnit_Framework_TestCase
     public function analyzerShouldThrowAnExceptionOnAShiftReduceConflict()
     {
         $grammar = new Grammar();
-        $grammar->addRule('Exp', array('Exp', '+', 'Exp'));
-        $grammar->setStartRule('Exp');
+        $grammar->rule('Exp', array('Exp', '+', 'Exp'));
+        $grammar->start('Exp');
 
         $analyzer = new Analyzer();
 

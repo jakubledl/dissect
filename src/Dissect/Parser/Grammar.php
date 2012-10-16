@@ -46,7 +46,7 @@ class Grammar
      *
      * @return \Dissect\Parser\Rule The new rule.
      */
-    public function addRule($name, array $components)
+    public function rule($name, array $components)
     {
         $num = $this->nextRuleNumber++;
 
@@ -87,7 +87,7 @@ class Grammar
      *
      * @param string The name of the start rule.
      */
-    public function setStartRule($name)
+    public function start($name)
     {
         $this->rules[0] = new Rule(0, self::START_RULE_NAME, array($name));
     }

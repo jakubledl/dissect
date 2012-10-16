@@ -19,9 +19,9 @@ class AnalysisTest extends PHPUnit_Framework_TestCase
     {
         $this->grammar = new Grammar();
 
-        $this->grammar->addRule('A', array('a', 'B', 'c'));
-        $this->grammar->addRule('B', array()); // an epsilon rule
-        $this->grammar->setStartRule('A');
+        $this->grammar->rule('A', array('a', 'B', 'c'));
+        $this->grammar->rule('B', array()); // an epsilon rule
+        $this->grammar->start('A');
 
         // This tiny grammar results in these item sets:
         //
