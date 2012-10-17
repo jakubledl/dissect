@@ -3,6 +3,7 @@
     "description": "Lexing and parsing in pure PHP",
     "keywords": ["lexing", "parsing", "ast", "parser"],
     "homepage": "https://github.com/jakubledl/dissect",
+    "license": "unlicense",
     "authors": [
         {
             "name": "Jakub Lédl",
