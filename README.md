@@ -7,4 +7,6 @@ in pure PHP.
 Documentation
 -------------
 
-Some incomplete docs can be found [here](docs/index.md).
+Some incomplete docs can be found [here][docs].
+
+[docs]: https://github.com/jakubledl/dissect/blob/master/docs/index.md

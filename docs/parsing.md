@@ -106,7 +106,7 @@ Note that we've taken care of associativity too: the first rule for
 Let's take care of `Multiplicative` the same way:
 
 ```php
-$grammar->rule('Multiplicative', ['Multiplicative', '**', 'Power'])
+$grammar->rule('Multiplicative', ['Multiplicative', '*', 'Power'])
     ->call(function ($left, $times, $right) {
         return $left * $right;
     });
@@ -114,7 +114,7 @@ $grammar->rule('Multiplicative', ['Power']);
 ```
 
 Again, we'll do the same for `Power`, but notice that we've made it
-right-recursive, since we want our power operator right-associative.
+right-recursive, since we want our power operator to be right-associative.
 
 ```php
 $grammar->rule('Power', ['Primary', '**', 'Power'])
