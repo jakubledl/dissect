@@ -1,5 +1,4 @@
-Welcome to Dissect!
-===================
+# Welcome to Dissect! [![build status](https://travis-ci.org/jakubledl/dissect.png)](https://travis-ci.org/jakubledl/dissect)
 
 Dissect is a set of tools for lexical and syntactical analysis written
 in pure PHP.
