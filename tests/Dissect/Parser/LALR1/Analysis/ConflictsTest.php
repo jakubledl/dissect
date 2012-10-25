@@ -3,7 +3,6 @@
 namespace Dissect\Parser\LALR1\Analysis;
 
 use Dissect\Parser\LALR1\Analysis\Exception\ReduceReduceConflictException;
-use Dissect\Parser\LALR1\Analysis\Exception\ShiftReduceConflictException;
 use Dissect\Parser\Grammar;
 use PHPUnit_Framework_TestCase;
 
@@ -43,18 +42,17 @@ class ConflictsTest extends PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function analyzerShouldThrowAnExceptionOnAShiftReduceConflict()
+    public function analyzerShouldChooseToShiftOnAnShiftReduceConflict()
     {
         $grammar = new Grammar();
         $grammar->rule('Exp', array('Exp', '+', 'Exp'));
+        $grammar->rule('Exp', array('int'));
         $grammar->start('Exp');
 
         $analyzer = new Analyzer();
 
-        try {
-            $table = $analyzer->createParseTable($grammar);
-            $this->fail('Expected a shift/reduce conflict exception.');
-        } catch (ShiftReduceConflictException $e) {
-        }
+        $table = $analyzer->createParseTable($grammar);
+
+        $this->assertEquals(3, $table['action'][4]['+']);
     }
 }

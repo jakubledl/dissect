@@ -174,19 +174,17 @@ class ParseTableCalculator
                         // there's conflict
                         $instruction = $table['action'][$state][$terminal];
 
-                        if ($instruction > 0) {
-                            // shift/reduce conflict
-                            throw new ShiftReduceConflictException(
-                                $this->rules[$reduction[0]],
-                                $terminal
-                            );
-                        } else {
-                            // reduce/reduce conflict
+                        if ($instruction < 0) {
+                            // reduce/reduce conflict, throw an exception
                             throw new ReduceReduceConflictException(
                                 $this->rules[-$instruction],
                                 $this->rules[$reduction[0]],
                                 $terminal
                             );
+                        } else {
+                            // otherwise it's a shift/reduce conflict, in
+                            // which case, we simply choose to shift
+                            continue;
                         }
                     }
 
