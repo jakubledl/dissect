@@ -191,6 +191,49 @@ You can then pass the table to the parser as the second constructor
 argument. The grammar still needs to be passed, since it contains the
 callbacks used to evaluate the rules.
 
+Resolving conflicts
+-------------------
+
+(*Caution, this is advanced stuff. You probably won't ever need to worry
+about this.*)
+
+LALR(1) is generally quite a powerful parsing algorithm. However, there
+are practical grammars that are, unfortunately, almost-but-not-quite
+LALR(1). When running the LALR(1) analyzer on such grammars, one sees
+that they contain 2 types of conflicts:
+
+- **Shift/Reduce conflicts** - the parser doesn't know whether to shift
+  another token or reduce what's on the stack.
+
+- **Reduce/Reduce conflicts** - the parser can reduce by multiple
+  grammar rules.
+
+There are 3 ways of resolving such conflicts and Dissect allows you to
+combine them any way you want:
+
+1. On a shift/reduce conflict, always shift. This is represented by
+   the constant `Grammar::SR_BY_SHIFT` and is such a
+   common way of resolving conflicts that it's enabled by default.
+
+2. On a reduce/reduce conflict, reduce using the longer rule.
+   Represented by `Grammar::RR_BY_LONGER_RULE`.
+
+3. On a reduce/reduce conflict, reduce using the rule that was
+   declared earlier in the grammar. Represented by
+   `Grammar::RR_BY_EARLIER_RULE`.
+
+To specify how precisely should Dissect resolve parse table conflicts,
+call `resolve` on your grammar:
+
+```php
+$grammar->resolve(Grammar::SR_BY_SHIFT | Grammar::RR_BY_LONGER_RULE);
+```
+
+There are two other constants: `Grammar::NONE` that forbids any
+conflicts in the grammar (useful when you want to see the shift/reduce
+conflicts of your grammar) and `Grammar::ALL`, which is a combination
+of all the 3 above methods defined simply for convenience.
+
 [twigparser]: https://github.com/fabpot/Twig/blob/master/lib/Twig/Parser.php
 [twig]: https://github.com/fabpot/Twig
 [annotationsparser]: https://github.com/doctrine/common/blob/master/lib/Doctrine/Common/Annotations/DocParser.php
