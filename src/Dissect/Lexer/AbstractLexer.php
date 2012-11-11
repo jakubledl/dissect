@@ -5,6 +5,7 @@ namespace Dissect\Lexer;
 use Dissect\Lexer\Exception\RecognitionException;
 use Dissect\Lexer\TokenStream\ArrayTokenStream;
 use Dissect\Parser\Parser;
+use Dissect\Util\Util;
 
 /**
  * A base class for a lexer. A superclass simply
@@ -21,11 +22,6 @@ abstract class AbstractLexer implements Lexer
     private $line = 1;
 
     /**
-     * @var int
-     */
-    private $offset = 1;
-
-    /**
      * Returns the current line.
      *
      * @return int The current line.
@@ -33,16 +29,6 @@ abstract class AbstractLexer implements Lexer
     protected function getCurrentLine()
     {
         return $this->line;
-    }
-
-    /**
-     * Returns the current offset.
-     *
-     * @return int The current offset.
-     */
-    protected function getCurrentOffset()
-    {
-        return $this->offset;
     }
 
     /**
@@ -75,7 +61,7 @@ abstract class AbstractLexer implements Lexer
         $tokens = array();
         $position = 0;
         $originalString = $string;
-        $originalLength = $this->stringLength($string);
+        $originalLength = Util::stringLength($string);
 
         while (true) {
             $token = $this->extractToken($string);
@@ -88,62 +74,24 @@ abstract class AbstractLexer implements Lexer
                 $tokens[] = $token;
             }
 
-            $shift = $this->stringLength($token->getValue());
+            $shift = Util::stringLength($token->getValue());
 
             $position += $shift;
 
             // update line + offset
             if ($position > 0) {
                 $this->line = substr_count($originalString, "\n", 0, $position) + 1;
-
-                $this->offset = $this->line > 1
-                    ? $position - strrpos($this->substring($originalString, 0, $position), "\n")
-                    : $position + 1;
             }
 
-            $string = $this->substring($string, $shift);
+            $string = Util::substring($string, $shift);
         }
 
         if ($position !== $originalLength) {
-            throw new RecognitionException($this->line, $this->offset);
+            throw new RecognitionException($this->line);
         }
 
-        $tokens[] = new CommonToken(Parser::EOF_TOKEN_TYPE, '', $this->line, $this->offset);
+        $tokens[] = new CommonToken(Parser::EOF_TOKEN_TYPE, '', $this->line);
 
         return new ArrayTokenStream($tokens);
-    }
-
-    /**
-     * Determines length of a UTF-8 string.
-     *
-     * @param string $str The string in UTF-8 encoding.
-     *
-     * @return int The length.
-     */
-    protected function stringLength($str)
-    {
-        return strlen(utf8_decode($str));
-    }
-
-    /**
-     * Extracts a substring of a UTF-8 string.
-     *
-     * @param string $str The string to extract the substring from.
-     * @param int $position The position from which to start extracting.
-     * @param int $length The length of the substring.
-     *
-     * @return string The substring.
-     */
-    protected function substring($str, $position, $length = null)
-    {
-        if ($length === null) {
-            $length = $this->stringLength($str);
-        }
-
-        if (function_exists('mb_substr')) {
-            return mb_substr($str, $position, $length, 'UTF-8');
-        } else {
-            return iconv_substr($str, $position, $length, 'UTF-8');
-        }
     }
 }

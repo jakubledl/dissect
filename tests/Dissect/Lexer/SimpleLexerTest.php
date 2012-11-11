@@ -35,7 +35,6 @@ class SimpleLexerTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(6, $stream->count()); // with EOF
         $this->assertEquals('(', $stream->get(1)->getType());
         $this->assertEquals(1, $stream->get(3)->getLine());
-        $this->assertEquals(4, $stream->get(2)->getOffset());
         $this->assertEquals('C', $stream->get(4)->getType());
     }
 

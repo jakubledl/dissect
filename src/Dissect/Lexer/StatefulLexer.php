@@ -4,6 +4,7 @@ namespace Dissect\Lexer;
 
 use Dissect\Lexer\Recognizer\RegexRecognizer;
 use Dissect\Lexer\Recognizer\SimpleRecognizer;
+use Dissect\Util\Util;
 use LogicException;
 
 /**
@@ -178,7 +179,7 @@ class StatefulLexer extends AbstractLexer
 
         foreach ($state['recognizers'] as $t => $recognizer) {
             if ($recognizer->match($string, $v)) {
-                if ($value === null || $this->stringLength($v) > $this->stringLength($value)) {
+                if ($value === null || Util::stringLength($v) > Util::stringLength($value)) {
                     $value = $v;
                     $type = $t;
                     $action = $state['actions'][$type];
@@ -193,7 +194,7 @@ class StatefulLexer extends AbstractLexer
                 array_pop($this->stateStack);
             }
 
-            return new CommonToken($type, $value, $this->getCurrentLine(), $this->getCurrentOffset());
+            return new CommonToken($type, $value, $this->getCurrentLine());
         }
 
         return null;

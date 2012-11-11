@@ -25,24 +25,17 @@ class CommonToken implements Token
     protected $line;
 
     /**
-     * @var int
-     */
-    protected $offset;
-
-    /**
      * Constructor.
      *
      * @param mixed $type The type of the token.
      * @param string $value The token value.
      * @param int $line The line.
-     * @param int $offset The offset.
      */
-    public function __construct($type, $value, $line, $offset)
+    public function __construct($type, $value, $line)
     {
         $this->type = $type;
         $this->value = $value;
         $this->line = $line;
-        $this->offset = $offset;
     }
 
     /**
@@ -67,13 +60,5 @@ class CommonToken implements Token
     public function getLine()
     {
         return $this->line;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getOffset()
-    {
-        return $this->offset;
     }
 }

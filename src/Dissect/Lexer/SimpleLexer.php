@@ -4,6 +4,7 @@ namespace Dissect\Lexer;
 
 use Dissect\Lexer\Recognizer\RegexRecognizer;
 use Dissect\Lexer\Recognizer\SimpleRecognizer;
+use Dissect\Util\Util;
 
 /**
  * SimpleLexer uses specified recognizers
@@ -90,7 +91,7 @@ class SimpleLexer extends AbstractLexer
 
         foreach ($this->recognizers as $t => $recognizer) {
             if ($recognizer->match($string, $v)) {
-                if ($value === null || $this->stringLength($v) > $this->stringLength($value)) {
+                if ($value === null || Util::stringLength($v) > Util::stringLength($value)) {
                     $value = $v;
                     $type = $t;
                 }
@@ -98,7 +99,7 @@ class SimpleLexer extends AbstractLexer
         }
 
         if ($type !== null) {
-            return new CommonToken($type, $value, $this->getCurrentLine(), $this->getCurrentOffset());
+            return new CommonToken($type, $value, $this->getCurrentLine());
         }
 
         return null;

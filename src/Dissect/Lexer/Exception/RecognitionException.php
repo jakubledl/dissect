@@ -12,18 +12,17 @@ use RuntimeException;
 class RecognitionException extends RuntimeException
 {
     protected $sourceLine;
-    protected $sourceOffset;
 
     /**
      * Constructor.
      *
      * @param int $line The line in the source.
-     * @param int $offset The offset.
      */
-    public function __construct($line, $offset)
+    public function __construct($line)
     {
         $this->sourceLine = $line;
-        $this->sourceOffset = $offset;
+
+        parent::__construct(sprintf("Cannot extract another token at line %d.", $line));
     }
 
     /**
@@ -34,15 +33,5 @@ class RecognitionException extends RuntimeException
     public function getSourceLine()
     {
         return $this->sourceLine;
-    }
-
-    /**
-     * Returns the source offset from the line where the exception occured.
-     *
-     * @return in The source offset.
-     */
-    public function getSourceOffset()
-    {
-        return $this->sourceOffset;
     }
 }

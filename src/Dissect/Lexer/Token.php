@@ -29,11 +29,4 @@ interface Token
      * @return int The line.
      */
     public function getLine();
-
-    /**
-     * Returns the offset of the token in its line.
-     *
-     * @return int The offset.
-     */
-    public function getOffset();
 }

@@ -24,22 +24,18 @@ class AbstractLexerTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals('a', $stream->getCurrentToken()->getValue());
         $this->assertEquals(1, $stream->getCurrentToken()->getLine());
-        $this->assertEquals(1, $stream->getCurrentToken()->getOffset());
         $stream->next();
 
         $this->assertEquals('b', $stream->getCurrentToken()->getValue());
         $this->assertEquals(1, $stream->getCurrentToken()->getLine());
-        $this->assertEquals(2, $stream->getCurrentToken()->getOffset());
         $stream->next();
 
         $this->assertEquals("\n", $stream->getCurrentToken()->getValue());
         $this->assertEquals(1, $stream->getCurrentToken()->getLine());
-        $this->assertEquals(3, $stream->getCurrentToken()->getOffset());
         $stream->next();
 
         $this->assertEquals('c', $stream->getCurrentToken()->getValue());
         $this->assertEquals(2, $stream->getCurrentToken()->getLine());
-        $this->assertEquals(1, $stream->getCurrentToken()->getOffset());
     }
 
     /**
@@ -52,7 +48,6 @@ class AbstractLexerTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals(Parser::EOF_TOKEN_TYPE, $stream->getCurrentToken()->getType());
         $this->assertEquals(1, $stream->getCurrentToken()->getLine());
-        $this->assertEquals(4, $stream->getCurrentToken()->getOffset());
     }
 
     /**
@@ -65,7 +60,6 @@ class AbstractLexerTest extends PHPUnit_Framework_TestCase
             $this->fail('Expected a RecognitionException.');
         } catch (RecognitionException $e) {
             $this->assertEquals(1, $e->getSourceLine());
-            $this->assertEquals(4, $e->getSourceOffset());
         }
     }
 

@@ -33,4 +33,40 @@ abstract class Util
     {
         return count(array_diff($first, $second)) !== 0;
     }
+
+    /**
+     * Determines length of a UTF-8 string.
+     *
+     * @param string $str The string in UTF-8 encoding.
+     *
+     * @return int The length.
+     */
+    public static function stringLength($str)
+    {
+        return strlen(utf8_decode($str));
+    }
+
+    /**
+     * Extracts a substring of a UTF-8 string.
+     *
+     * @param string $str The string to extract the substring from.
+     * @param int $position The position from which to start extracting.
+     * @param int $length The length of the substring.
+     *
+     * @return string The substring.
+     */
+    public static function substring($str, $position, $length = null)
+    {
+        static $lengthFunc = null;
+
+        if ($lengthFunc === null) {
+            $lengthFunc = function_exists('mb_substr') ? 'mb_substr' : 'iconv_substr';
+        }
+
+        if ($length === null) {
+            $length = self::stringLength($str);
+        }
+
+        return $lengthFunc($str, $position, $length, 'UTF-8');
+    }
 }
