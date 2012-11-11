@@ -37,7 +37,8 @@ class Analyzer
             $extendedRules,
             $followSets,
             $transitionTable,
-            $grammar->getNonterminals()
+            $grammar->getNonterminals(),
+            $grammar->getConflictsMode()
         );
 
         return $calculator->calculateParseTable($grammar->getStartRule()->getNumber());

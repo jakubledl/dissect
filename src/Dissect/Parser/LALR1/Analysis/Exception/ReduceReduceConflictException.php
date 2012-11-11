@@ -25,7 +25,7 @@ vs:
 
   %d. %s -> %s
 
-(on lookahead "%s"). Restructure your grammar to prevent this.
+(on lookahead "%s"). Restructure your grammar or choose a conflict resolution mode to prevent this.
 EOT;
 
     /**

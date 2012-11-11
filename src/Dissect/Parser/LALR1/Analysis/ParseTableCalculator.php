@@ -4,6 +4,7 @@ namespace Dissect\Parser\LALR1\Analysis;
 
 use Dissect\Parser\LALR1\Analysis\Exception\ShiftReduceConflictException;
 use Dissect\Parser\LALR1\Analysis\Exception\ReduceReduceConflictException;
+use Dissect\Parser\Grammar;
 use Dissect\Parser\Parser;
 use Dissect\Util\Util;
 
@@ -47,6 +48,11 @@ class ParseTableCalculator
     protected $nonterminals;
 
     /**
+     * @var int
+     */
+    protected $conflictsMode;
+
+    /**
      * Constructor.
      *
      * @param array $itemSets The item sets.
@@ -63,7 +69,8 @@ class ParseTableCalculator
         array $extendedRules,
         array $followSets,
         array $transitionTable,
-        array $nonterminals
+        array $nonterminals,
+        $conflictsMode
     )
     {
         $this->itemSets = $itemSets;
@@ -72,6 +79,7 @@ class ParseTableCalculator
         $this->followSets = $followSets;
         $this->transitionTable = $transitionTable;
         $this->nonterminals = $nonterminals;
+        $this->conflictsMode = $conflictsMode;
     }
 
     /**
@@ -175,6 +183,36 @@ class ParseTableCalculator
                         $instruction = $table['action'][$state][$terminal];
 
                         if ($instruction < 0) {
+                            if ($this->conflictsMode & Grammar::RR_BY_LONGER_RULE) {
+                                $count1 = count($this->rules[-$instruction]->getComponents());
+                                $count2 = count($this->rules[$reduction[0]]->getComponents());
+
+                                if ($count1 > $count2) {
+                                    // original rule is longer
+                                    continue;
+                                } elseif ($count1 < $count2) {
+                                    // new rule is longer
+                                    $table['action'][$state][$terminal] = -$reduction[0];
+                                    continue;
+                                }
+                            }
+
+                            // if the rules have same length or resolving by length is disabled,
+                            // try resolving by priority
+                            if ($this->conflictsMode & Grammar::RR_BY_EARLIER_RULE) {
+                                $num1 = $this->rules[-$instruction]->getNumber();
+                                $num2 = $this->rules[$reduction[0]]->getNumber();
+
+                                if ($num1 < $num2) {
+                                    // original rule was earlier
+                                    continue;
+                                } else {
+                                    // new rule was earlier
+                                    $table['action'][$state][$terminal] = -$reduction[0];
+                                    continue;
+                                }
+                            }
+
                             // reduce/reduce conflict, throw an exception
                             throw new ReduceReduceConflictException(
                                 $this->rules[-$instruction],
@@ -182,9 +220,15 @@ class ParseTableCalculator
                                 $terminal
                             );
                         } else {
-                            // otherwise it's a shift/reduce conflict, in
-                            // which case, we simply choose to shift
-                            continue;
+                            // if s/r resolving is enabled
+                            if ($this->conflictsMode & Grammar::SR_BY_SHIFT) {
+                                continue;
+                            }
+
+                            throw new ShiftReduceConflictException(
+                                $this->rules[$reduction[0]],
+                                $terminal
+                            );
                         }
                     }
 

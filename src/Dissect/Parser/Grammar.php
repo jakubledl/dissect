@@ -38,6 +38,44 @@ class Grammar
     protected $nextRuleNumber = 1;
 
     /**
+     * @var int
+     */
+    protected $conflictsMode = self::SR_BY_SHIFT;
+
+    /**
+     * Signifies that the parser should not resolve any
+     * grammar conflicts.
+     */
+    const NONE = 0;
+
+    /**
+     * Signifies that the parser should resolve
+     * shift/reduce conflicts by always shifting.
+     */
+    const SR_BY_SHIFT = 1;
+
+    /**
+     * Signifies that the parser should resolve
+     * reduce/reduce conflicts by reducing with
+     * the longer rule.
+     */
+    const RR_BY_LONGER_RULE = 2;
+
+    /**
+     * Signifies that the parser should resolve
+     * reduce/reduce conflicts by reducing
+     * with the rule that was given earlier in
+     * the grammar.
+     */
+    const RR_BY_EARLIER_RULE = 4;
+
+    /**
+     * Signifies that the parser should automatically
+     * resolve all grammar conflicts.
+     */
+    const ALL = 7;
+
+    /**
      * Adds a new rule to the grammar. The rules are numbered incrementally
      * from 1 up.
      *
@@ -104,5 +142,25 @@ class Grammar
         }
 
         return $this->rules[0];
+    }
+
+    /**
+     * Sets the mode of conflict resolution.
+     *
+     * @param int $mode The bitmask for the mode.
+     */
+    public function resolve($mode)
+    {
+        $this->conflictsMode = $mode;
+    }
+
+    /**
+     * Returns the conflict resolution mode for this grammar.
+     *
+     * @return int The bitmask of the resolution mode.
+     */
+    public function getConflictsMode()
+    {
+        return $this->conflictsMode;
     }
 }

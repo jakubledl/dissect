@@ -42,7 +42,7 @@ class ConflictsTest extends PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function analyzerShouldChooseToShiftOnAnShiftReduceConflict()
+    public function analyzerShouldByDefaultChooseToShiftOnAnShiftReduceConflict()
     {
         $grammar = new Grammar();
         $grammar->rule('Exp', array('Exp', '+', 'Exp'));
@@ -54,5 +54,46 @@ class ConflictsTest extends PHPUnit_Framework_TestCase
         $table = $analyzer->createParseTable($grammar);
 
         $this->assertEquals(3, $table['action'][4]['+']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzerShouldChooseToReduceByLongerRuleWhenSpecified()
+    {
+        $grammar = new Grammar();
+        $grammar->rule('S', array('S', 'S', 'S'));
+        $grammar->rule('S', array('S', 'S'));
+        $grammar->rule('S', array('b'));
+        $grammar->start('S');
+
+        $grammar->resolve(Grammar::SR_BY_SHIFT | Grammar::RR_BY_LONGER_RULE);
+
+        $analyzer = new Analyzer();
+
+        $table = $analyzer->createParseTable($grammar);
+
+        $this->assertEquals(-1, $table['action'][4]['$eof']);
+    }
+
+    /**
+     * @test
+     */
+    public function analyzerShouldChooseToReduceByEarlierRuleWhenSpecified()
+    {
+        $grammar = new Grammar();
+        $grammar->rule('S', array('a', 'B', 'c'));
+        $grammar->rule('S', array('a', 'C', 'c'));
+        $grammar->rule('B', array('b'));
+        $grammar->rule('C', array('b'));
+        $grammar->start('S');
+
+        $grammar->resolve(Grammar::RR_BY_EARLIER_RULE);
+
+        $analyzer = new Analyzer();
+
+        $table = $analyzer->createParseTable($grammar);
+
+        $this->assertEquals(-3, $table['action'][5]['c']);
     }
 }

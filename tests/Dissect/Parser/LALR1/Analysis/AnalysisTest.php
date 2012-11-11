@@ -106,7 +106,8 @@ class AnalysisTest extends PHPUnit_Framework_TestCase
             $this->extendedRules,
             $this->followSets,
             $this->transitionTable,
-            $this->grammar->getNonterminals()
+            $this->grammar->getNonterminals(),
+            $this->grammar->getConflictsMode()
         );
 
         $this->parseTable = $calculator->calculateParseTable($this->grammar->getStartRule()->getNumber());
