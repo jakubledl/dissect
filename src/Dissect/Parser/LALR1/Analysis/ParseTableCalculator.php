@@ -97,18 +97,19 @@ class ParseTableCalculator
         $reductions = array();
 
         foreach ($this->itemSets as $set) {
-            $reductions[$set->getNumber()] = array();
+            $table['action'][$set->getNumber()] = array();
 
             foreach ($set->all() as $item) {
-                if ($item->getRule()->getNumber() === $startRuleNumber &&
-                    $item->isReductionItem()) {
+                if ($item->isReductionItem()) {
+                    if ($item->getRule()->getNumber() === $startRuleNumber) {
+                        $table['action'][$set->getNumber()] = array(
+                            Parser::EOF_TOKEN_TYPE => 'acc',
+                        );
+                    }
 
-                    // for each item set which has a reduction item with
-                    // LHS = start rule, add accept as the action for EOF
-                    $table['action'][$set->getNumber()] = array(Parser::EOF_TOKEN_TYPE => 'acc');
+                    $reductions[$set->getNumber()] = array();
+
                     break;
-                } else {
-                    $table['action'][$set->getNumber()] = array();
                 }
             }
         }
