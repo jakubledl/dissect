@@ -102,9 +102,7 @@ class ParseTableCalculator
             foreach ($set->all() as $item) {
                 if ($item->isReductionItem()) {
                     if ($item->getRule()->getNumber() === $startRuleNumber) {
-                        $table['action'][$set->getNumber()] = array(
-                            Parser::EOF_TOKEN_TYPE => 'acc',
-                        );
+                        $table['action'][$set->getNumber()][Parser::EOF_TOKEN_TYPE] = 'acc';
                     }
 
                     $reductions[$set->getNumber()] = array();
