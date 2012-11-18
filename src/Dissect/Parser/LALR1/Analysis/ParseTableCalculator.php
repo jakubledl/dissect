@@ -94,7 +94,11 @@ class ParseTableCalculator
         // initialize the table
         $table = array('action' => array(), 'goto' => array());
 
+        $reductions = array();
+
         foreach ($this->itemSets as $set) {
+            $reductions[$set->getNumber()] = array();
+
             foreach ($set->all() as $item) {
                 if ($item->getRule()->getNumber() === $startRuleNumber &&
                     $item->isReductionItem()) {
@@ -109,53 +113,20 @@ class ParseTableCalculator
             }
         }
 
-        $reductions = array();
-        $count = count($this->extendedRules);
-
-        for ($i = 0; $i < $count; $i++) {
-            for ($j = $i + 1; $j < $count; $j++) {
-                if (!isset($this->extendedRules[$i])) {
-                    // rule at $i has already been merged
-                    continue 2;
-                }
-
-                if (!isset($this->extendedRules[$j])) {
-                    // same for $j
-                    continue;
-                }
-
-                $first = $this->extendedRules[$i];
-                $second = $this->extendedRules[$j];
-
-                if ($first->getOriginalNumber() === $second->getOriginalNumber() &&
-                    $first->getFinalSetNumber() === $second->getFinalSetNumber()) {
-
-                    // extended rules derived from same original rules
-                    // and having the same final state are identical
-                    // and can be merged
-                    $this->followSets[$first->getName()] = Util::union(
-                        $this->followSets[$first->getName()],
-                        $this->followSets[$second->getName()]
-                    );
-
-                    unset($this->extendedRules[$j]);
-                }
-            }
-        }
-
         foreach ($this->extendedRules as $rule) {
-            if ($rule->getOriginalNumber() !== $startRuleNumber) {
-                // traverse remaining rules and build the $reductions array.
-                // a reduction is a tuple ($state, $followSet), where
-                // $state indicates the state in which the reduction is
-                // to be performed and $followSet is the set of tokens
-                // which, when found as lookahead, trigger the reduction.
-                // the starting rule is skipped, since it already
-                // has its accept columns
-                $reductions[$rule->getFinalSetNumber()][] = array(
-                    $rule->getOriginalNumber(),
-                    $this->followSets[$rule->getName()],
-                );
+            if ($rule->getOriginalNumber() === $startRuleNumber) {
+                continue;
+            }
+
+            if (isset($reductions[$rule->getFinalSetNumber()][$rule->getOriginalNumber()])) {
+                $reductions[$rule->getFinalSetNumber()][$rule->getOriginalNumber()] =
+                    Util::union(
+                        $this->followSets[$rule->getName()],
+                        $reductions[$rule->getFinalSetNumber()][$rule->getOriginalNumber()]
+                    );
+            } else {
+                $reductions[$rule->getFinalSetNumber()][$rule->getOriginalNumber()] =
+                    $this->followSets[$rule->getName()];
             }
         }
 
@@ -173,11 +144,9 @@ class ParseTableCalculator
             }
         }
 
-        foreach ($reductions as $state => $reductionSet) {
-            foreach ($reductionSet as $reduction) {
-                foreach ($reduction[1] as $terminal) {
-                    // fill in the reductions
-
+        foreach ($reductions as $state => $rules) {
+            foreach ($rules as $rule => $terminals) {
+                foreach ($terminals as $terminal) {
                     if (array_key_exists($terminal, $table['action'][$state])) {
                         // there's conflict
                         $instruction = $table['action'][$state][$terminal];
@@ -185,14 +154,14 @@ class ParseTableCalculator
                         if ($instruction < 0) {
                             if ($this->conflictsMode & Grammar::RR_BY_LONGER_RULE) {
                                 $count1 = count($this->rules[-$instruction]->getComponents());
-                                $count2 = count($this->rules[$reduction[0]]->getComponents());
+                                $count2 = count($this->rules[$rule]->getComponents());
 
                                 if ($count1 > $count2) {
                                     // original rule is longer
                                     continue;
                                 } elseif ($count1 < $count2) {
                                     // new rule is longer
-                                    $table['action'][$state][$terminal] = -$reduction[0];
+                                    $table['action'][$state][$terminal] = -$rule;
                                     continue;
                                 }
                             }
@@ -201,14 +170,14 @@ class ParseTableCalculator
                             // try resolving by priority
                             if ($this->conflictsMode & Grammar::RR_BY_EARLIER_RULE) {
                                 $num1 = $this->rules[-$instruction]->getNumber();
-                                $num2 = $this->rules[$reduction[0]]->getNumber();
+                                $num2 = $this->rules[$rule]->getNumber();
 
                                 if ($num1 < $num2) {
                                     // original rule was earlier
                                     continue;
                                 } else {
                                     // new rule was earlier
-                                    $table['action'][$state][$terminal] = -$reduction[0];
+                                    $table['action'][$state][$terminal] = -$rule;
                                     continue;
                                 }
                             }
@@ -216,7 +185,7 @@ class ParseTableCalculator
                             // reduce/reduce conflict, throw an exception
                             throw new ReduceReduceConflictException(
                                 $this->rules[-$instruction],
-                                $this->rules[$reduction[0]],
+                                $this->rules[$rule],
                                 $terminal
                             );
                         } else {
@@ -226,13 +195,13 @@ class ParseTableCalculator
                             }
 
                             throw new ShiftReduceConflictException(
-                                $this->rules[$reduction[0]],
+                                $this->rules[$rule],
                                 $terminal
                             );
                         }
                     }
 
-                    $table['action'][$state][$terminal] = -$reduction[0];
+                    $table['action'][$state][$terminal] = -$rule;
                 }
             }
         }
