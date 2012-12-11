@@ -12,6 +12,7 @@ This page serves as an index for individual documentation pages.
 1. [Lexical analysis with Dissect](lexing.md)
     1. [SimpleLexer](lexing.md#simplelexer)
     2. [StatefulLexer](lexing.md#statefullexer)
+    3. [Improving lexer performance](lexing.md#improving-lexer-performance)
 2. [Parsing with Dissect](parsing.md)
     1. [Few thoughts before we start](parsing.md#few-thoughts-before-we-start)
     2. [Writing a grammar](parsing.md#writing-a-grammar)

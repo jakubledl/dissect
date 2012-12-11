@@ -134,6 +134,25 @@ which case the lexer goes to the state specified by the string, or
 state of the stack, essentialy going back to previous state.
 Finally, we tell the lexer in which state to start by calling `start`.
 
+Improving lexer performance
+---------------------------
+
+There's one important trick to improve the performance of your lexers.
+Both the examples and Dissect's unit tests omit it for clarity, however,
+for practical uses, I believe it to be a necessity.
+
+When defining tokens using regular expressions, *always* anchor the
+regex at the beginning using `^` like this:
+
+```php
+$lexer->regex('INT', '/^[1-9][0-9]*/');
+```
+
+This little optimization will lead to substantial performance gains on
+any but the shortest input strings, since without anchoring, the PCRE
+engine would always look for matches throughout the entire remaining
+input string, which would be incredibly wasteful for long inputs.
+
 Continue
 --------
 
