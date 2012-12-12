@@ -76,12 +76,9 @@ class LALR1Parser implements Parser
                     // reduce
                     $rule = $this->grammar->getRule(-$action);
                     $popCount = count($rule->getComponents());
-                    $newArgs = array();
 
-                    for ($i = 0; $i < $popCount; $i++) {
-                        array_pop($stateStack);
-                        array_unshift($newArgs, array_pop($args));
-                    }
+                    array_splice($stateStack, -$popCount);
+                    $newArgs = array_splice($args, -$popCount);
 
                     if ($callback = $rule->getCallback()) {
                         $args[] = call_user_func_array($callback, $newArgs);
