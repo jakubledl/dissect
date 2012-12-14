@@ -27,7 +27,7 @@ class SimpleRecognizer implements Recognizer
      */
     public function match($string, &$result)
     {
-        if (strpos($string, $this->string) === 0) {
+        if (strncmp($string, $this->string, strlen($this->string)) === 0) {
             $result = $this->string;
 
             return true;
