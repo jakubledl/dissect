@@ -4,13 +4,6 @@ namespace Dissect\Parser;
 
 /**
  * Represents a rule in a context-free grammar.
- * For example, a rule like this:
- *
- * A -> a b c
- *
- * would be written like this:
- *
- * $grammar->rule('A', array('a', 'b', 'c'));
  *
  * @author Jakub Lédl <jakubledl@gmail.com>
  */
@@ -102,7 +95,7 @@ class Rule
      *
      * @param callable $callback The callback.
      */
-    public function call($callback)
+    public function setCallback($callback)
     {
         $this->callback = $callback;
     }

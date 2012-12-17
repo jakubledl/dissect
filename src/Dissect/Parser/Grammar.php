@@ -43,6 +43,16 @@ class Grammar
     protected $conflictsMode = self::SR_BY_SHIFT;
 
     /**
+     * @var string
+     */
+    protected $currentNonterminal;
+
+    /**
+     * @var \Dissect\Parser\Rule
+     */
+    protected $currentRule;
+
+    /**
      * Signifies that the parser should not resolve any
      * grammar conflicts.
      */
@@ -75,24 +85,58 @@ class Grammar
      */
     const ALL = 7;
 
-    /**
-     * Adds a new rule to the grammar. The rules are numbered incrementally
-     * from 1 up.
-     *
-     * @param string $name The name, or the left-hand side of the rule.
-     * @param string[] $components The components, or the right-hand side of the rule.
-     *
-     * @return \Dissect\Parser\Rule The new rule.
-     */
-    public function rule($name, array $components)
+    public function __invoke($nonterminal)
     {
-        $num = $this->nextRuleNumber++;
-
-        if (!in_array($name, $this->nonterminals)) {
-            $this->nonterminals[] = $name;
+        if (!in_array($nonterminal, $this->nonterminals)) {
+            $this->nonterminals[] = $nonterminal;
         }
 
-        return $this->rules[$num] = new Rule($num, $name, $components);
+        $this->currentNonterminal = $nonterminal;
+
+        return $this;
+    }
+
+    /**
+     * Defines an alternative for a grammar rule.
+     *
+     * @param string... The components of the rule.
+     *
+     * @return \Dissect\Parser\Grammar This instance.
+     */
+    public function is()
+    {
+        if ($this->currentNonterminal === null) {
+            throw new LogicException(
+                'You must specify a name of the rule first.'
+            );
+        }
+
+        $num = $this->nextRuleNumber++;
+
+        $this->rules[$num] = $this->currentRule =
+            new Rule($num, $this->currentNonterminal, func_get_args());
+
+        return $this;
+    }
+
+    /**
+     * Sets the callback for the current rule.
+     *
+     * @param callable $callback The callback.
+     *
+     * @return \Dissect\Parser\Grammar This instance.
+     */
+    public function call($callback)
+    {
+        if ($this->currentRule === null) {
+            throw new LogicException(
+                'You must specify a rule first.'
+            );
+        }
+
+        $this->currentRule->setCallback($callback);
+
+        return $this;
     }
 
     /**

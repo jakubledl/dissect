@@ -10,35 +10,33 @@ class GrammarTest extends PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $this->grammar = new Grammar();
+        $this->grammar = new ExampleGrammar();
     }
 
     /**
      * @test
      */
-    public function addRuleShouldCreateANewRuleAndNumberItAutomatically()
+    public function ruleAlternativesShouldHaveTheSameName()
     {
-        $rule = $this->grammar->rule('Foo', array('x', 'y', 'z'));
+        $rules = $this->grammar->getRules();
 
-        $this->assertInstanceOf('Dissect\\Parser\\Rule', $rule);
-        $this->assertEquals(1, $rule->getNumber());
-        $this->assertEquals(3, count($rule->getComponents()));
-
-        $this->assertEquals(array('Foo'), $this->grammar->getNonterminals());
+        $this->assertEquals('Foo', $rules[1]->getName());
+        $this->assertEquals('Foo', $rules[2]->getName());
     }
 
     /**
      * @test
      */
-    public function setStartRuleShouldAugmentTheGrammarWithASpecialRuleAtPosition0()
+    public function theGrammarShouldBeAugmentedWithAStartRule()
     {
-        $this->grammar->rule('Foo', array('x', 'y', 'z'));
-        $this->grammar->start('Foo');
+        $this->assertEquals(
+            Grammar::START_RULE_NAME,
+            $this->grammar->getStartRule()->getName()
+        );
 
-        $rule = $this->grammar->getStartRule();
-
-        $this->assertEquals(0, $rule->getNumber());
-        $this->assertEquals(Grammar::START_RULE_NAME, $rule->getName());
-        $this->assertEquals(array('Foo'), $rule->getComponents());
+        $this->assertEquals(
+            array('Foo'),
+            $this->grammar->getStartRule()->getComponents()
+        );
     }
 }
