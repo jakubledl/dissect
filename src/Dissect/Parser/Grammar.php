@@ -28,6 +28,11 @@ class Grammar
     protected $rules = array();
 
     /**
+     * @var array
+     */
+    protected $groupedRules = array();
+
+    /**
      * @var string[]
      */
     protected $nonterminals = array();
@@ -113,8 +118,12 @@ class Grammar
 
         $num = $this->nextRuleNumber++;
 
-        $this->rules[$num] = $this->currentRule =
-            new Rule($num, $this->currentNonterminal, func_get_args());
+        $rule = new Rule($num, $this->currentNonterminal, func_get_args());
+
+        $this->rules[$num] =
+            $this->currentRule =
+            $this->groupedRules[$this->currentNonterminal][] =
+            $rule;
 
         return $this;
     }
@@ -162,6 +171,16 @@ class Grammar
     public function getNonterminals()
     {
         return $this->nonterminals;
+    }
+
+    /**
+     * Returns rules grouped by nonterminal name.
+     *
+     * @return array The rules grouped by nonterminal name.
+     */
+    public function getGroupedRules()
+    {
+        return $this->groupedRules;
     }
 
     /**

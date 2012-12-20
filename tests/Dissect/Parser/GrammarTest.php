@@ -39,4 +39,13 @@ class GrammarTest extends PHPUnit_Framework_TestCase
             $this->grammar->getStartRule()->getComponents()
         );
     }
+
+    /**
+     * @test
+     */
+    public function shouldReturnAlternativesGroupedByName()
+    {
+        $rules = $this->grammar->getGroupedRules();
+        $this->assertCount(2, $rules['Foo']);
+    }
 }

@@ -15,4 +15,4 @@ Warning
 
 This is the development branch, currently undergoing serious rewrites.
 The last stable version is `v0.9.0` on
-[dev-master][https://github.com/jakubledl/dissect/tree/master].
+[dev-master](https://github.com/jakubledl/dissect/tree/master).
