@@ -12,8 +12,8 @@ use LogicException;
 class Grammar
 {
     /**
-     * The name given to the rule the grammar is augmented by
-     * when setStartRule() is called.
+     * The name given to the rule the grammar is augmented with
+     * when start() is called.
      */
     const START_RULE_NAME = '$start';
 

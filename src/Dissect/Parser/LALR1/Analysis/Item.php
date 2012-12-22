@@ -164,4 +164,15 @@ class Item
     {
         return $this->lookahead;
     }
+
+    /**
+     * Returns all components that haven't been recognized
+     * so far.
+     *
+     * @return array The unrecognized components.
+     */
+    public function getUnrecognizedComponents()
+    {
+        return array_slice($this->rule->getComponents(), $this->dotIndex + 1);
+    }
 }

@@ -68,4 +68,14 @@ class ItemTest extends PHPUnit_Framework_TestCase
         $item1->pump('d');
         $item1->pump('d');
     }
+
+    /**
+     * @test
+     */
+    public function getUnrecognizedComponentsShouldReturnAllComponentAfterTheDottedOne()
+    {
+        $item = new Item(new Rule(1, 'A', array('a', 'b', 'c')), 1);
+
+        $this->assertEquals(array('c'), $item->getUnrecognizedComponents());
+    }
 }
