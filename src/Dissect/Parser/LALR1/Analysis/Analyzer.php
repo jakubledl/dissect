@@ -69,8 +69,8 @@ class Analyzer
                     $component = $item->getActiveComponent();
                     $groupedItems[$component][] = $item;
 
-                    if (!in_array($component, $added) && in_array($component, $nonterminals)) {
-                        // if not processed
+                    // if nonterminal
+                    if (in_array($component, $nonterminals)) {
 
                         // calculate lookahead
                         $lookahead = array();
@@ -121,7 +121,15 @@ class Analyzer
                         }
 
                         foreach ($groupedRules[$component] as $rule) {
-                            $newItem = new Item($rule, 0);
+                            if (!in_array($component, $added)) {
+                                $newItem = new Item($rule, 0);
+
+                                $currentItems[] = $newItem;
+                                $state->add($newItem);
+
+                            } else {
+                                $newItem = $state->get($rule->getNumber(), 0);
+                            }
 
                             if ($connect) {
                                 $item->connect($newItem);
@@ -130,30 +138,10 @@ class Analyzer
                             if ($pump) {
                                 $pumpings[] = array($newItem, $lookahead);
                             }
-
-                            $currentItems[] = $newItem;
-                            $state->add($newItem);
                         }
-
-                        // foreach (array_map(function ($rule) use ($item, $pump, $connect) {
-                        //     $newItem = new Item($rule, 0);
-
-                        //     if ($connect) {
-                        //         $item->connect($newItem);
-                        //     }
-
-                        //     if ($pump) {
-                        //         $pumpings[] = array($newItem, $lookahead);
-                        //     }
-
-                        //     return $newItem;
-                        // }, $groupedRules[$component]) as $newItem) {
-                        //     $currentItems[] = $newItem;
-                        //     $state->add($newItem);
-                        // }
-
-                        $added[] = $component;
                     }
+
+                    $added[] = $component;
                 }
             }
 

@@ -55,6 +55,16 @@ class Automaton
     }
 
     /**
+     * Returns all states in this FSA.
+     *
+     * @return array The states of this FSA.
+     */
+    public function getStates()
+    {
+        return $this->states;
+    }
+
+    /**
      * Returns the transition table for this automaton.
      *
      * @return array The transition table.
