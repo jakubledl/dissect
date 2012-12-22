@@ -201,13 +201,15 @@ class Analyzer
                     $match = true;
 
                     // the origins match iff the rules are same
-                    // (the isset $check) and if the positions
+                    // (the isset $check and the length check) and if the positions
                     // are the same (the $positions equality check)
                     foreach ($currentOrigin as $ruleNum => &$positions) {
                         // the comparison of positions is order-insensitive
                         sort($positions);
 
-                        if (!isset($map[$ruleNum]) || $map[$ruleNum] != $positions) {
+                        if (count($currentOrigin) !== count($map)
+                            || !isset($map[$ruleNum])
+                            || $map[$ruleNum] != $positions) {
                             $match = false;
 
                             break;
