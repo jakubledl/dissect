@@ -33,11 +33,6 @@ class Grammar
     protected $groupedRules = array();
 
     /**
-     * @var string[]
-     */
-    protected $nonterminals = array();
-
-    /**
      * @var int
      */
     protected $nextRuleNumber = 1;
@@ -45,7 +40,7 @@ class Grammar
     /**
      * @var int
      */
-    protected $conflictsMode = self::SR_BY_SHIFT;
+    protected $conflictsMode = self::SHIFT;
 
     /**
      * @var string
@@ -67,14 +62,14 @@ class Grammar
      * Signifies that the parser should resolve
      * shift/reduce conflicts by always shifting.
      */
-    const SR_BY_SHIFT = 1;
+    const SHIFT = 1;
 
     /**
      * Signifies that the parser should resolve
      * reduce/reduce conflicts by reducing with
      * the longer rule.
      */
-    const RR_BY_LONGER_RULE = 2;
+    const LONGER_REDUCE = 2;
 
     /**
      * Signifies that the parser should resolve
@@ -82,7 +77,7 @@ class Grammar
      * with the rule that was given earlier in
      * the grammar.
      */
-    const RR_BY_EARLIER_RULE = 4;
+    const EARLIER_REDUCE = 4;
 
     /**
      * Signifies that the parser should automatically
@@ -92,10 +87,6 @@ class Grammar
 
     public function __invoke($nonterminal)
     {
-        if (!in_array($nonterminal, $this->nonterminals)) {
-            $this->nonterminals[] = $nonterminal;
-        }
-
         $this->currentNonterminal = $nonterminal;
 
         return $this;

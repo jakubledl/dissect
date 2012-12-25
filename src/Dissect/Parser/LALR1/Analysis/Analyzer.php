@@ -2,6 +2,8 @@
 
 namespace Dissect\Parser\LALR1\Analysis;
 
+use Dissect\Parser\LALR1\Analysis\Exception\ReduceReduceConflictException;
+use Dissect\Parser\LALR1\Analysis\Exception\ShiftReduceConflictException;
 use Dissect\Parser\Grammar;
 use Dissect\Parser\Parser;
 use Dissect\Util\Util;
@@ -25,8 +27,9 @@ class Analyzer
     public function analyze(Grammar $grammar)
     {
         $automaton = $this->buildAutomaton($grammar);
+        list($parseTable, $conflicts) = $this->buildParseTable($automaton, $grammar);
 
-        return new AnalysisResult($automaton);
+        return new AnalysisResult($parseTable, $automaton, $conflicts);
     }
 
     /**
@@ -50,9 +53,6 @@ class Analyzer
 
         // states are numbered sequentially
         $nextStateNumber = 0;
-
-        // the nonterminals of this grammar
-        $nonterminals = $grammar->getNonterminals();
 
         // rules grouped by their name
         $groupedRules = $grammar->getGroupedRules();
@@ -97,14 +97,14 @@ class Analyzer
                     $groupedItems[$component][] = $item;
 
                     // if nonterminal
-                    if (in_array($component, $nonterminals)) {
+                    if (array_key_exists($component, $groupedRules)) {
 
                         // calculate lookahead
                         $lookahead = array();
                         $cs = $item->getUnrecognizedComponents();
 
                         foreach ($cs as $i => $c) {
-                            if (!in_array($c, $nonterminals)) {
+                            if (!array_key_exists($c, $groupedRules)) {
                                 // if terminal, add it and break the loop
                                 $lookahead = Util::union($lookahead, array($c));
 
@@ -201,15 +201,12 @@ class Analyzer
                     $match = true;
 
                     // the origins match iff the rules are same
-                    // (the isset $check and the length check) and if the positions
-                    // are the same (the $positions equality check)
-                    foreach ($currentOrigin as $ruleNum => &$positions) {
-                        // the comparison of positions is order-insensitive
-                        sort($positions);
+                    foreach ($currentOrigin as $ruleNum => $positions) {
 
                         if (count($currentOrigin) !== count($map)
                             || !isset($map[$ruleNum])
-                            || $map[$ruleNum] != $positions) {
+                            // the comparison of positions is order-insensitive
+                            || (array_diff($map[$ruleNum], $positions) !== array_diff($positions, $map[$ruleNum]))) {
                             $match = false;
 
                             break;
@@ -271,6 +268,155 @@ class Analyzer
         }
 
         return $automaton;
+    }
+
+    /**
+     * Encodes the handle-finding FSA as a LR parse table.
+     *
+     * @param \Dissect\Parser\LALR1\Analysis\Automaton $automaton
+     *
+     * @return array The parse table.
+     */
+    protected function buildParseTable(Automaton $automaton, Grammar $grammar)
+    {
+        $nonterminals = array_keys($grammar->getGroupedRules());
+        $conflictsMode = $grammar->getConflictsMode();
+        $conflicts = array();
+
+        // initialize the table
+        $table = array(
+            'action' => array(),
+            'goto' => array(),
+        );
+
+        foreach ($automaton->getTransitionTable() as $num => $transitions) {
+            foreach ($transitions as $trigger => $destination) {
+                if (!in_array($trigger, $nonterminals)) {
+                    // terminal implies shift
+                    $table['action'][$num][$trigger] = $destination;
+                } else {
+                    // nonterminal goes in the goto table
+                    $table['goto'][$num][$trigger] = $destination;
+                }
+            }
+        }
+
+        foreach ($automaton->getStates() as $num => $state) {
+            if (!isset($table['action'][$num])) {
+                $table['action'][$num] = array();
+            }
+
+            foreach ($state->getItems() as $item) {
+                if ($item->isReduceItem()) {
+                    $ruleNumber = $item->getRule()->getNumber();
+
+                    foreach ($item->getLookahead() as $token) {
+                        if (array_key_exists($token, $table['action'][$num])) {
+                            // conflict
+                            $instruction = $table['action'][$num][$token];
+
+                            if ($instruction > 0) {
+                                // s/r
+                                if ($conflictsMode & Grammar::SHIFT) {
+                                    $conflicts[] = array(
+                                        'state' => $num,
+                                        'lookahead' => $token,
+                                        'rule' => $item->getRule(),
+                                        'resolution' => Grammar::SHIFT,
+                                    );
+
+                                    continue;
+                                } else {
+                                    throw new ShiftReduceConflictException(
+                                        $item->getRule(),
+                                        $token
+                                    );
+                                }
+                            } else {
+                                // r/r
+
+                                $originalRule = $grammar->getRule(-$instruction);
+                                $newRule = $item->getRule();
+
+                                if ($conflictsMode & Grammar::LONGER_REDUCE) {
+
+                                    $count1 = count($originalRule->getComponents());
+                                    $count2 = count($newRule->getComponents());
+
+                                    if ($count1 > $count2) {
+                                        // original rule is longer
+                                        $resolvedRules = array($originalRule, $newRule);
+
+                                        $conflicts[] = array(
+                                            'state' => $num,
+                                            'lookahead' => $token,
+                                            'rules' => $resolvedRules,
+                                            'resolution' => Grammar::LONGER_REDUCE,
+                                        );
+
+                                        continue;
+                                    } elseif ($count2 > $count1) {
+                                        // new rule is longer
+                                        $table['action'][$num][$token] = -$ruleNumber;
+                                        $resolvedRules = array($newRule, $originalRule);
+
+                                        $conflicts[] = array(
+                                            'state' => $num,
+                                            'lookahead' => $token,
+                                            'rules' => $resolvedRules,
+                                            'resolution' => Grammar::LONGER_REDUCE,
+                                        );
+
+                                        continue;
+                                    }
+                                }
+
+                                if ($conflictsMode & Grammar::EARLIER_REDUCE) {
+                                    if (-$instruction < $ruleNumber) {
+                                        // original rule was earlier
+                                        $resolvedRules = array($originalRule, $newRule);
+
+                                        $conflicts[] = array(
+                                            'state' => $num,
+                                            'lookahead' => $token,
+                                            'rules' => $resolvedRules,
+                                            'resolution' => Grammar::EARLIER_REDUCE,
+                                        );
+
+                                        continue;
+                                    } else {
+                                        // new rule was earlier
+                                        $table['action'][$num][$token] = -$ruleNumber;
+
+                                        $conflicts[] = array(
+                                            'state' => $num,
+                                            'lookahead' => $token,
+                                            'rules' => $resolvedRules,
+                                            'resolution' => Grammar::EARLIER_REDUCE,
+                                        );
+                                        $resolvedRules = array($newRule, $originalRule);
+
+                                        continue;
+                                    }
+                                }
+
+                                // everything failed, throw an exception
+                                throw new ReduceReduceConflictException(
+                                    $num,
+                                    $originalRule,
+                                    $newRule,
+                                    $token
+                                );
+                            }
+                        }
+
+                        $table['action'][$num][$token] = -$ruleNumber;
+                    }
+                }
+            }
+        }
+
+        return array($table, $conflicts);
     }
 
     /**

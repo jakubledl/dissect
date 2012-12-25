@@ -15,13 +15,28 @@ class AnalysisResult
     protected $automaton;
 
     /**
+     * @var array
+     */
+    protected $parseTable;
+
+    /**
+     * @var array
+     */
+    protected $resolvedConflicts;
+
+    /**
      * Constructor.
      *
+     * @param array $parseTable The parse table.
      * @param \Dissect\Parser\LALR1\Analysis\Automaton $automaton
+     * @param array $conflicts An array of conflicts resolved during parse table
+     * construction.
      */
-    public function __construct(Automaton $automaton)
+    public function __construct(array $parseTable, Automaton $automaton, array $conflicts)
     {
+        $this->parseTable = $parseTable;
         $this->automaton = $automaton;
+        $this->resolvedConflicts = $conflicts;
     }
 
     /**
@@ -32,5 +47,25 @@ class AnalysisResult
     public function getAutomaton()
     {
         return $this->automaton;
+    }
+
+    /**
+     * Returns the resulting parse table.
+     *
+     * @return array The parse table.
+     */
+    public function getParseTable()
+    {
+        return $this->parseTable;
+    }
+
+    /**
+     * Returns an array of resolved parse table conflicts.
+     *
+     * @return array The conflicts.
+     */
+    public function getResolvedConflicts()
+    {
+        return $this->resolvedConflicts;
     }
 }
