@@ -44,6 +44,7 @@ class DebugTableDumper implements TableDumper
      */
     public function dump(array $table)
     {
+        // for readability
         ksort($table['action']);
         ksort($table['goto']);
 
