@@ -328,6 +328,7 @@ class Analyzer
                                     continue;
                                 } else {
                                     throw new ShiftReduceConflictException(
+                                        $num,
                                         $item->getRule(),
                                         $token
                                     );
