@@ -1,0 +1,15 @@
+digraph Automaton {
+    rankdir="LR";
+
+    0 [label="State 0\n\n&bull; S\nS &rarr; &bull; a S b\nS &rarr; &bull; [$eof]"];
+    1 [label="State 1\n\nS &bull; [$eof]"];
+    2 [label="State 2\n\nS &rarr; a &bull; S b\nS &rarr; &bull; a S b\nS &rarr; &bull; [b]"];
+    3 [label="State 3\n\nS &rarr; a S &bull; b"];
+    4 [label="State 4\n\nS &rarr; a S b &bull; [$eof b]"];
+
+    0 -> 1 [label="S"];
+    0 -> 2 [label="a"];
+    2 -> 3 [label="S"];
+    2 -> 2 [label="a"];
+    3 -> 4 [label="b"];
+}

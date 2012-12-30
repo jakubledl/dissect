@@ -1,0 +1,9 @@
+digraph State2 {
+    rankdir="LR";
+
+    2 [label="State 2\n\nS &rarr; a &bull; S b\nS &rarr; &bull; a S b\nS &rarr; &bull; [b]"];
+    3 [label="State 3"];
+
+    2 -> 3 [label="S"];
+    2 -> 2 [label="a"];
+}
