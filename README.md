@@ -1,6 +1,6 @@
 # Welcome to Dissect!
-- [master](https://github.com/jakubledl/dissect/tree/master) ([![build status](https://travis-ci.org/jakubledl/dissect.png?branch=master)](https://travis-ci.org/jakubledl/dissect)
-- [develop](https://github.com/jakubledl/dissect) ([![build status](https://travis-ci.org/jakubledl/dissect.png?branch=develop)](https://travis-ci.org/jakubledl/dissect)
+- [master](https://github.com/jakubledl/dissect/tree/master) [![build status](https://travis-ci.org/jakubledl/dissect.png?branch=master)](https://travis-ci.org/jakubledl/dissect)
+- [develop](https://github.com/jakubledl/dissect) [![build status](https://travis-ci.org/jakubledl/dissect.png?branch=develop)](https://travis-ci.org/jakubledl/dissect)
 
 Dissect is a set of tools for lexical and syntactical analysis written
 in pure PHP.

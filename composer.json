@@ -15,6 +15,10 @@
         "php": ">=5.3.0"
     },
 
+    "suggest": {
+        "symfony/console": "For the command-line interface"
+    },
+
     "autoload": {
         "psr-0": { "Dissect": "src/" }
     }
