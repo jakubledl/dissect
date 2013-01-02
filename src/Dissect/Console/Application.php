@@ -14,6 +14,9 @@ use Symfony\Component\Console\Input\InputOption;
  */
 class Application extends BaseApplication
 {
+    // credit goes to everzet & kostiklv, since
+    // I copied the BehatApplication class when
+    // dealing with some CLI problems.
     public function __construct($version)
     {
         parent::__construct('Dissect', $version);
@@ -37,14 +40,7 @@ class Application extends BaseApplication
         return new InputDefinition(array(
             new InputOption('--help',    '-h', InputOption::VALUE_NONE, 'Display this help message.'),
             new InputOption('--verbose', '-v', InputOption::VALUE_NONE, 'Increase verbosity of exceptions.'),
-            new InputOption('--version', '-V', InputOption::VALUE_NONE, 'Display this behat version.'),
-            new InputOption('--config',  '-c', InputOption::VALUE_REQUIRED, 'Specify config file to use.'),
-            new InputOption('--profile', '-p', InputOption::VALUE_REQUIRED, 'Specify config profile to use.')
+            new InputOption('--version', '-V', InputOption::VALUE_NONE, 'Display version information.'),
         ));
     }
-
-    // protected function getTerminalWidth()
-    // {
-    //     return PHP_INT_MAX;
-    // }
 }
