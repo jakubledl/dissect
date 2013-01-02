@@ -8,12 +8,18 @@ SimpleLexer
 -----------
 
 `SimpleLexer` simply accepts some token definitions and applies them on
-the input. Let's create a new instance for this chapter:
+the input. Let's create a subclass for this chapter:
 
 ```php
 use Dissect\Lexer\SimpleLexer;
 
-$lexer = new SimpleLexer();
+class ArithLexer extends SimpleLexer
+{
+    public function __construct()
+    {
+        // token definitions
+    }
+}
 ```
 
 ### Defining tokens
@@ -21,14 +27,14 @@ $lexer = new SimpleLexer();
 There are 3 ways to define a token. The simplest one looks like this:
 
 ```php
-$lexer->token('+');
+$this->token('+');
 ```
 
 This definition will simply match a plus symbol, using `+` both as the
 name and value of the token. You can use 2 arguments:
 
 ```php
-$lexer->token('CLASS', 'class');
+$this->token('CLASS', 'class');
 ```
 
 if you want the token name (first argument) to differ from what will actually be
@@ -37,18 +43,24 @@ recognized (second argument).
 The final way defines a token by a regular expression:
 
 ```php
-$lexer->regex('INT', '/[1-9][0-9]*/');
+$this->regex('INT', '/[1-9][0-9]*/');
 ```
 
 Let's now define some tokens we will use in the next chapter:
 
 ```php
-$lexer->regex('INT', '/[1-9][0-9]*/');
-$lexer->token('(');
-$lexer->token(')');
-$lexer->token('+');
-$lexer->token('*');
-$lexer->token('**');
+class ArithLexer extends SimpleLexer
+{
+    public function __construct()
+    {
+        $this->regex('INT', '/[1-9][0-9]*/');
+        $this->token('(');
+        $this->token(')');
+        $this->token('+');
+        $this->token('*');
+        $this->token('**');
+    }
+}
 ```
 
 > **Tip**: You can also chain the method calls using a fluent interface.
@@ -61,8 +73,21 @@ to recognize them, but they carry no meaning or value, so we can tell
 the lexer to `skip` them:
 
 ```php
-$lexer->regex('WSP', "/[ \r\n\t]+/");
-$lexer->skip('WSP');
+class ArithLexer extends SimpleLexer
+{
+    public function __construct()
+    {
+        $this->regex('INT', '/[1-9][0-9]*/');
+        $this->token('(');
+        $this->token(')');
+        $this->token('+');
+        $this->token('*');
+        $this->token('**');
+
+        $this->regex('WSP', "/[ \r\n\t]+/");
+        $this->skip('WSP');
+    }
+}
 ```
 
 > You can pass any number of token names to the `skip` method.
@@ -72,6 +97,7 @@ $lexer->skip('WSP');
 Now that we've defined our tokens, we can simply call:
 
 ```php
+$lexer = new ArithLexer();
 $stream = $lexer->lex($input);
 ```
 
@@ -111,19 +137,23 @@ it. Let's see an example for our templating language:
 ```php
 use Dissect\Lexer\StatefulLexer;
 
-$lexer = new StatefulLexer();
+class TemplateLexer extends StatefulLexer
+{
+    public function __construct()
+    {
+        $lexer->state('outside')
+            ->regex('CONTENT', '/[^"{{"]*/')
+            ->token('{{')->action('tag');
 
-$lexer->state('outside')
-    ->regex('CONTENT', '/[^"{{"]+/')
-    ->token('{{')->action('tag');
+        $lexer->state('tag')
+            ->regex('WSP', "/[ \r\n\t]+/")
+            ->regex('VAR', '/[a-zA-Z_]+/')
+            ->token('}}')->action(StatefulLexer::POP_STATE)
+            ->skip('WSP');
 
-$lexer->state('tag')
-    ->regex('WSP', "/[ \r\n\t]+/")
-    ->regex('VAR', '/[a-zA-Z_]+/')
-    ->token('}}')->action(StatefulLexer::POP_STATE)
-    ->skip('WSP');
-
-$lexer->start('outside');
+        $lexer->start('outside');
+    }
+}
 ```
 
 Please note that before defining any tokens, we have to define a state.
@@ -139,13 +169,13 @@ Improving lexer performance
 
 There's one important trick to improve the performance of your lexers.
 Both the examples and Dissect's unit tests omit it for clarity, however,
-for practical uses, I believe it to be a necessity.
+for practical uses, it's a necessity.
 
 When defining tokens using regular expressions, *always* anchor the
 regex at the beginning using `^` like this:
 
 ```php
-$lexer->regex('INT', '/^[1-9][0-9]*/');
+$this->regex('INT', '/^[1-9][0-9]*/');
 ```
 
 This little optimization will lead to substantial performance gains on
@@ -160,5 +190,5 @@ Now that we've demonstrated how to perform lexical analysis with
 Dissect, we can move onto syntactical analysis, commonly known as
 [parsing][parsing].
 
-[tokenstream]: https://github.com/jakubledl/dissect/blob/master/src/Dissect/Lexer/TokenStream/TokenStream.php
+[tokenstream]: ../src/Dissect/Lexer/TokenStream/TokenStream.php
 [parsing]: parsing.md

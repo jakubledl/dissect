@@ -14,12 +14,14 @@ This page serves as an index for individual documentation pages.
     2. [StatefulLexer](lexing.md#statefullexer)
     3. [Improving lexer performance](lexing.md#improving-lexer-performance)
 2. [Parsing with Dissect](parsing.md)
-    1. [Few thoughts before we start](parsing.md#few-thoughts-before-we-start)
+    1. [Why an LALR(1) parser?](parsing.md#why-an-lalr1-parser)
     2. [Writing a grammar](parsing.md#writing-a-grammar)
     3. [Example: Parsing mathematical expressions](parsing.md#example-parsing-mathematical-expressions)
     4. [Invalid input](parsing.md#invalid-input)
     5. [Precomputing the parse table](parsing.md#precomputing-the-parse-table)
     6. [Resolving conflicts](parsing.md#resolving-conflicts)
-3. [Building an AST](node.md)
+3. Building an AST *todo*
+4. Describing common syntactic structures *todo*
+5. The command-line interface
 
 [parsing]: http://en.wikipedia.org/wiki/Parsing

@@ -1,8 +1,8 @@
 Parsing with Dissect
 ====================
 
-Few thoughts before we start
-----------------------------
+Why an LALR(1) parser?
+----------------------
 
 Parsing is a task that's needed more often than one would think;
 for examples in some famous PHP projects, see [this parser][twigparser]
@@ -28,31 +28,86 @@ But let's get to actually parsing something.
 Writing a grammar
 -----------------
 
-A grammar is represented by an instance of `Dissect\Parser\Grammar`.
-There are two methods of interest here: `rule`, which is used to add new
-rules to the grammar like this:
+A grammar is represented by a subclass of `Dissect\Parser\Grammar`.
 
 ```php
-$grammar->rule('Sum', ['int', '+', 'int']);
-// corresponds to BNF rule Sum -> int + int
+use Dissect\Parser\Grammar;
+
+class ArithGrammar extends Grammar
+{
+    public function __construct()
+    {
+        // rule definitions
+    }
+}
 ```
 
-and `start`, which is used to set the starting rule for the grammar:
+First, you tell Dissect what rule are you describing. Let's say we want
+to describe a rule for a `Sum`:
 
 ```php
-$grammar->start('Sum');
+$this('Sum')
 ```
 
-The `rule` method returns an instance of `Dissect\Parser\Rule`, which
-has another important method, `call`, which is used to set the callback
-used to evalute the whole rule:
+and then you specify what the rule actually `is`:
 
 ```php
-$grammar->rule('Sum', ['int', '+', 'int'])
-    ->call(function ($left, $plus, $right) {
-        return $left + $right;
+$this('Sum')
+    ->is('int', '+', 'int');
+```
+
+A rule can of course have many alternatives:
+
+```php
+$this('Sum')
+    ->is('int', '+', 'int')
+    ->is('string', '+', 'string');
+```
+
+and you will probably want to specify how to evalute the rule:
+
+```php
+$this('Sum')
+    ->is('int', '+', 'int')
+    ->call(function ($l, $_, $r) {
+        return $l + $r;
+    })
+
+    ->is('string', '+', 'string')
+    ->call(function ($l, $_, $r) {
+        return $l . $r;
     });
 ```
+
+> The number of arguments to the callback function is always equal
+> to the length of the rule to which it belongs.
+
+### Empty rules
+
+A grammar can (and many times will) contain empty rules, that is, rules that
+can match 0 tokens of the input. This is useful when, for example,
+describing a list of function arguments, which can be either empty or a list of
+values separated by commas.
+
+An empty rule is defined simply by calling `is` with 0 arguments:
+
+```php
+$this('Empty')
+    ->is();
+```
+
+If you find this notation unclear, you can explicitly mark empty rules
+with a comment:
+
+```php
+$this('Empty')
+    ->is(/* empty */);
+```
+
+> **Beware:** When you don't specify a callback for a rule, Dissect
+> will default to returing the leftmost (first) component of the rule. You
+> are, however, required to specify a callback for an empty rule, since
+> in a rule with zero components, there is obviously no leftmost one.
 
 Example: Parsing mathematical expressions
 -----------------------------------------
@@ -61,21 +116,27 @@ In the chapter on lexing, we've created a lexer we will now use to
 process our expressions:
 
 ```php
-$lexer = new SimpleLexer();
+class ArithLexer extends SimpleLexer
+{
+    public function __construct()
+    {
+        $this->regex('INT', '/^[1-9][0-9]*/');
+        $this->token('(');
+        $this->token(')');
+        $this->token('+');
+        $this->token('*');
+        $this->token('**');
 
-$lexer->regex('INT', '/[1-9][0-9]*/');
-$lexer->token('(');
-$lexer->token(')');
-$lexer->token('+');
-$lexer->token('*');
-$lexer->token('**'); // power operator
+        $this->regex('WSP', "/[ \r\n\t]+/");
+        $this->skip('WSP');
+    }
+}
 
-$lexer->regex('WSP', "/[ \r\n\t]+/");
-$lexer->skip('WSP');
+$lexer = new ArithLexer();
 ```
 
-Even though mathematical expressions seem trivial, defining them in a
-grammar is not, because we have to consider two things:
+There's more to specifying mathematical expression than would seem,
+because there are two concepts to consider:
 
 1. Operator precedence
 2. Operator associativity
@@ -84,7 +145,8 @@ The operator problem is usually solved in these steps:
 
 1. Create a hierarchy of your operators.
 2. Start creating rules from the lowest-precedence one to the
-   highest-precedence one.
+   highest-precedence one, each "level" will reference rules
+   in the one above it.
 3. The highest operator will reference an atomic, nondividable
    expression, which in our case is an `INT` or a parenthesised
    expression.
@@ -93,67 +155,99 @@ The lowest-precedence operator in our grammar is `+`, so we will start
 with two rules for `Additive`:
 
 ```php
-$grammar->rule('Additive', ['Additive', '+', 'Multiplicative'])
-    ->call(function ($left, $plus, $right) {
-        return $left + $right;
-    });
-$grammar->rule('Additive', ['Multiplicative']);
+$this('Additive')
+    ->is('Additive', '+', 'Multiplicative')
+    ->call(function ($l, $_, $r) {
+        return $l + $r;
+    })
+
+    ->is('Multiplicative');
 ```
 
+Here we say "an additive expression is an additive expression plus a
+multiplicative expression, or simply a multiplicative expression.
 Note that we've taken care of associativity too: the first rule for
-`Additive` is left-recursive, which means left associativity.
+`Additive` is left-recursive, which means that an input like this:
+
+    2 + 7 + 3
+
+will be interpreted as
+
+   (2 + 7) + 3
+
+which is exactly what we want to achieve.
 
 Let's take care of `Multiplicative` the same way:
 
 ```php
-$grammar->rule('Multiplicative', ['Multiplicative', '*', 'Power'])
-    ->call(function ($left, $times, $right) {
-        return $left * $right;
-    });
-$grammar->rule('Multiplicative', ['Power']);
+$this('Multiplicative')
+    ->is('Multiplicative', '*', 'Power')
+    ->call(function ($l, $_, $r) {
+        return $l * $r;
+    })
+
+    ->is('Power');
 ```
 
 Again, we'll do the same for `Power`, but notice that we've made it
-right-recursive, since we want our power operator to be right-associative.
+right-recursive, since when we say
+
+    2 ** 3 ** 4
+
+we want it to mean
+
+    2 ** (3 ** 4)
 
 ```php
-$grammar->rule('Power', ['Primary', '**', 'Power'])
-    ->call(function ($left, $pow, $right) {
+$this('Power')
+    ->is('Primary', '**', 'Power')
+    ->call(function ($l, $_, $r) {
         return pow($left, $right);
-    });
-$grammar->rule('Power', ['Primary']);
+    })
+
+    ->is('Primary');
 ```
 
 We've reached the highest-precedence operator, so now we have to define
 what is a `Primary` expression:
 
 ```php
-$grammar->rule('Primary', ['(', 'Additive', ')']) // we loop back to additive
-    ->call(function ($l, $expr, $r) {
-        return $expr;
-    });
-$grammar->rule('Primary', ['INT'])
-    ->call(function ($value) {
-        return (int)$value;
+$this('Primary')
+    ->is('(', 'Additive', ')')
+    ->call(function ($_, $e, $_) {
+        return $e;
+    })
+
+    ->is('INT')
+    ->call(function ($int) {
+        return (int)$int->getValue();
     });
 ```
 
-Now we only have to specify a starting rule:
+Note that the callback for the last rule recieves a token, that is, a
+`Dissect\Lexer\Token` object, so we have to "unwrap" the value from it.
+
+Now we just specify a start rule:
 
 ```php
-$grammar->start('Additive');
+$this->start('Additive');
 ```
 
 and parse away:
 
 ```php
-use Dissect\Parser\LALR1\LALR1Parser;
+use Dissect\Parser\LALR1\Parser;
 
-$parser = new LALR1Parser($grammar);
+$parser = new Parser(new ArithGrammar());
 $stream = $lexer->lex('6 ** (1 + 1) ** 2 * (5 + 4)');
 echo $parser->parse($stream);
 // => 11664
 ```
+
+### Describing common syntactic structures
+
+To see how to describe commonly used syntactic structures such as
+repetitions and lists, see the [dedicated documentation section][common].
 
 Invalid input
 -------------
@@ -161,8 +255,8 @@ Invalid input
 When the parser encounters a syntactical error, it stops dead and
 throws a `Dissect\Parser\Exception\UnexpectedTokenException`.
 The exception gives you programmatic access to information about the
-problem: `getToken` returns a `Dissect\Lexer\Token` representing the
-invalid token and `getExpected` returns an array of token types the parser
+problem: `getToken()` returns a `Dissect\Lexer\Token` representing the
+invalid token and `getExpected()` returns an array of token types the parser
 expected to encounter.
 
 Precomputing the parse table
@@ -181,25 +275,54 @@ build process) like this:
 use Dissect\Parser\LALR1\Analysis\Analyzer;
 
 $analyzer = new Analyzer();
-$parseTable = $analyzer->createParseTable($grammar);
+$parseTable = $analyzer->analyze($grammar)->getParseTable();
 ```
 
-The table is just a regular PHP array, so it can be serialized,
-`var_export`ed or whatever you need to do to save it to a file.
+Now that we've got the parse table, we can dump it to a string which
+we then save to a file. To do this, we can use either
+`Dissect\Parser\LALR1\Dumper\ProductionTableDumper`:
 
-You can then pass the table to the parser as the second constructor
-argument. The grammar still needs to be passed, since it contains the
-callbacks used to evaluate the rules.
+```php
+$dumper = new ProductionTableDumper()
+$php = $dumper->dump($parseTable);
+```
+
+which produces very compact, whitespace-free and absolutely unreadable
+code, or `Dissect\Parser\LALR1\Dumper\DebugTableDumper`:
+
+```php
+$dumper = new DebugTableDumper($grammar);
+$php = $dumper->dump($parseTable);
+```
+
+which produces indented, readable representation with comments
+explaining each step the parser takes when processing the input.
+
+### Using the dumped parse table
+
+To use the dumped parse table, just write
+
+```php
+$parser = new Parser($grammar, require $parseTableFile);
+```
+
+You still need to pass the grammar, since it contains the callbacks
+used to evalute the input.
+
+> If you intend to use Dissect more like a traditional parser generator,
+> you don't actually need to do any of this, of course. Dissect provides a
+> command-line interface you can use to process and debug your grammars.
+> It's described in its own [documentation section][cli].
 
 Resolving conflicts
 -------------------
 
-(*Caution, this is advanced stuff. You probably won't ever need to worry
-about this.*)
+*Caution, this is advanced stuff. You probably won't ever need to worry
+about this.*
 
-LALR(1) is generally quite a powerful parsing algorithm. However, there
+LALR(1) is generally a very poweful parsing algorithm. However, there
 are practical grammars that are, unfortunately, almost-but-not-quite
-LALR(1). When running the LALR(1) analyzer on such grammars, one sees
+LALR(1). When running an LALR(1) analyzer on such grammars, one sees
 that they contain 2 types of conflicts:
 
 - **Shift/Reduce conflicts** - the parser doesn't know whether to shift
@@ -208,30 +331,30 @@ that they contain 2 types of conflicts:
 - **Reduce/Reduce conflicts** - the parser can reduce by multiple
   grammar rules.
 
-There are 3 ways of resolving such conflicts and Dissect allows you to
+There are 3 commonly used ways of resolving such conflicts and Dissect allows you to
 combine them any way you want:
 
 1. On a shift/reduce conflict, always shift. This is represented by
-   the constant `Grammar::SR_BY_SHIFT` and is such a
-   common way of resolving conflicts that it's enabled by default.
+   the constant `Grammar::SHIFT` and is so common that Dissect enables
+   it by default.
 
 2. On a reduce/reduce conflict, reduce using the longer rule.
-   Represented by `Grammar::RR_BY_LONGER_RULE`.
+   Represented by `Grammar::LONGER_REDUCE`. Both this and the previous
+   way represent the same philosophy: take the largest bite possible.
 
 3. On a reduce/reduce conflict, reduce using the rule that was
    declared earlier in the grammar. Represented by
-   `Grammar::RR_BY_EARLIER_RULE`.
+   `Grammar::EARLIER_REDUCE`.
 
-To specify how precisely should Dissect resolve parse table conflicts,
+To specify precisely how should Dissect resolve parse table conflicts,
 call `resolve` on your grammar:
 
 ```php
-$grammar->resolve(Grammar::SR_BY_SHIFT | Grammar::RR_BY_LONGER_RULE);
+$this->resolve(Grammar::SHIFT | Grammar::LONGER_REDUCE);
 ```
 
 There are two other constants: `Grammar::NONE` that forbids any
-conflicts in the grammar (useful when you want to see the shift/reduce
-conflicts of your grammar) and `Grammar::ALL`, which is a combination
+conflicts in the grammar and `Grammar::ALL`, which is a combination
 of all the 3 above methods defined simply for convenience.
 
 [twigparser]: https://github.com/fabpot/Twig/blob/master/lib/Twig/Parser.php
@@ -242,3 +365,5 @@ of all the 3 above methods defined simply for convenience.
 [rdparser]: http://en.wikipedia.org/wiki/Recursive_descent_parser
 [llk]: http://en.wikipedia.org/wiki/LL_parser
 [lrk]: http://en.wikipedia.org/wiki/LR_parser
+[cli]: cli.md
+[common]: common.md
