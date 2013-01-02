@@ -50,7 +50,7 @@ EOT;
                 self::MESSAGE,
                 $rule->getNumber(),
                 $rule->getName(),
-                empty($components) ? '/* empty */' : implode(' ', $components()),
+                empty($components) ? '/* empty */' : implode(' ', $components),
                 $lookahead,
                 $state
             ),
