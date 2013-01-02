@@ -330,7 +330,8 @@ class Analyzer
                                     throw new ShiftReduceConflictException(
                                         $num,
                                         $item->getRule(),
-                                        $token
+                                        $token,
+                                        $automaton
                                     );
                                 }
                             } else {
@@ -406,7 +407,8 @@ class Analyzer
                                     $num,
                                     $originalRule,
                                     $newRule,
-                                    $token
+                                    $token,
+                                    $automaton
                                 );
                             }
                         }

@@ -2,8 +2,8 @@
 
 namespace Dissect\Parser\LALR1\Analysis\Exception;
 
+use Dissect\Parser\LALR1\Analysis\Automaton;
 use Dissect\Parser\Rule;
-use LogicException;
 
 /**
  * Thrown when a grammar is not LALR(1) and exhibits
@@ -11,7 +11,7 @@ use LogicException;
  *
  * @author Jakub Lédl <jakubledl@gmail.com>
  */
-class ShiftReduceConflictException extends LogicException
+class ShiftReduceConflictException extends ConflictException
 {
     /**
      * The exception message template.
@@ -21,7 +21,7 @@ The grammar exhibits a shift/reduce conflict on rule:
 
   %d. %s -> %s
 
-(on lookahead "%s" in state %d). Restructure your grammar or choose a conflict resolution mode to prevent this.
+(on lookahead "%s" in state %d). Restructure your grammar or choose a conflict resolution mode.
 EOT;
 
     /**
@@ -35,30 +35,31 @@ EOT;
     protected $lookahead;
 
     /**
-     * @var int
-     */
-    protected $state;
-
-    /**
      * Constructor.
      *
      * @param \Dissect\Parser\Rule $rule The conflicting grammar rule.
      * @param string $lookahead The conflicting lookahead to shift.
+     * @param \Dissect\Parser\LALR1\Analysis\Automaton $automaton The faulty automaton.
      */
-    public function __construct($state, Rule $rule, $lookahead)
+    public function __construct($state, Rule $rule, $lookahead, Automaton $automaton)
     {
-        parent::__construct(sprintf(
-            self::MESSAGE,
-            $rule->getNumber(),
-            $rule->getName(),
-            implode(' ', $rule->getComponents()),
-            $lookahead,
-            $state
-        ));
+        $components = $rule->getComponents();
+
+        parent::__construct(
+            sprintf(
+                self::MESSAGE,
+                $rule->getNumber(),
+                $rule->getName(),
+                empty($components) ? '/* empty */' : implode(' ', $components()),
+                $lookahead,
+                $state
+            ),
+            $state,
+            $automaton
+        );
 
         $this->rule = $rule;
         $this->lookahead = $lookahead;
-        $this->state = $state;
     }
 
     /**
@@ -79,15 +80,5 @@ EOT;
     public function getLookahead()
     {
         return $this->lookahead;
-    }
-
-    /**
-     * Returns the number of the inadequate state.
-     *
-     * @return int
-     */
-    public function getStateNumber()
-    {
-        return $this->state;
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Dissect\Parser\LALR1\Analysis\Exception;
 
+use Dissect\Parser\LALR1\Analysis\Automaton;
 use Dissect\Parser\Rule;
-use LogicException;
 
 /**
  * Thrown when a grammar is not LALR(1) and exhibits
@@ -11,7 +11,7 @@ use LogicException;
  *
  * @author Jakub Lédl <jakubledl@gmail.com>
  */
-class ReduceReduceConflictException extends LogicException
+class ReduceReduceConflictException extends ConflictException
 {
     /**
      * The exception message template.
@@ -25,7 +25,7 @@ vs:
 
   %d. %s -> %s
 
-(on lookahead "%s" in state %d). Restructure your grammar or choose a conflict resolution mode to prevent this.
+(on lookahead "%s" in state %d). Restructure your grammar or choose a conflict resolution mode.
 EOT;
 
     /**
@@ -44,36 +44,38 @@ EOT;
     protected $lookahead;
 
     /**
-     * @var int
-     */
-    protected $state;
-
-    /**
      * Constructor.
      *
      * @param int $state The number of the inadequate state.
      * @param \Dissect\Parser\Rule $firstRule The first conflicting grammar rule.
      * @param \Dissect\Parser\Rule $secondRule The second conflicting grammar rule.
      * @param string $lookahead The conflicting lookahead.
+     * @param \Dissect\Parser\LALR1\Analysis\Automaton $automaton The faulty automaton.
      */
-    public function __construct($state, Rule $firstRule, Rule $secondRule, $lookahead)
+    public function __construct($state, Rule $firstRule, Rule $secondRule, $lookahead, Automaton $automaton)
     {
-        parent::__construct(sprintf(
-            self::MESSAGE,
-            $firstRule->getNumber(),
-            $firstRule->getName(),
-            implode(' ', $firstRule->getComponents()),
-            $secondRule->getNumber(),
-            $secondRule->getName(),
-            implode(' ', $secondRule->getComponents()),
-            $lookahead,
-            $state
-        ));
+        $components1 = $firstRule->getComponents();
+        $components2 = $secondRule->getComponents();
+
+        parent::__construct(
+            sprintf(
+                self::MESSAGE,
+                $firstRule->getNumber(),
+                $firstRule->getName(),
+                empty($components1) ? '/* empty */' : implode(' ', $components1),
+                $secondRule->getNumber(),
+                $secondRule->getName(),
+                empty($components2) ? '/* empty */' : implode(' ', $components2),
+                $lookahead,
+                $state
+            ),
+            $state,
+            $automaton
+        );
 
         $this->firstRule = $firstRule;
         $this->secondRule = $secondRule;
         $this->lookahead = $lookahead;
-        $this->state = $state;
     }
 
     /**
@@ -104,15 +106,5 @@ EOT;
     public function getLookahead()
     {
         return $this->lookahead;
-    }
-
-    /**
-     * Returns the number of the inadequate state.
-     *
-     * @return int
-     */
-    public function getStateNumber()
-    {
-        return $this->state;
     }
 }

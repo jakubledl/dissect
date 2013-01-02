@@ -12,10 +12,20 @@
     ],
 
     "require": {
-        "php": ">=5.3.0"
+        "php": ">=5.3.3"
     },
 
+    "require-dev": {
+        "symfony/console": "~2.1"
+    },
+
+    "suggest": {
+        "symfony/console": "for the command-line tool"
+    },
+
+    "bin": ["bin/dissect.php", "bin/dissect"],
+
     "autoload": {
-        "psr-0": { "Dissect": "src/" }
+        "psr-0": { "Dissect": ["src/"] }
     }
 }
