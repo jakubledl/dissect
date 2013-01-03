@@ -88,7 +88,7 @@ and then
 
 The result will be the following image:
 
-![State 3](state_3.png)
+![State 3](https://raw.github.com/jakubledl/dissect/develop/docs/state_3.png)
 
 in which we can clearly see how the conflict arose: the state #3 calls
 both for a shift and a reduction by the rule `S -> ` on
