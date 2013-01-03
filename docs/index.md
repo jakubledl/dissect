@@ -20,7 +20,8 @@ This page serves as an index for individual documentation pages.
     4. [Invalid input](parsing.md#invalid-input)
     5. [Precomputing the parse table](parsing.md#precomputing-the-parse-table)
     6. [Resolving conflicts](parsing.md#resolving-conflicts)
-3. Building an AST *todo*
+3. [Building an AST](ast.md)
+    1. [Travesing the AST](ast.md#traversing-the-ast)
 4. Describing common syntactic structures *todo*
 5. The command-line interface
 

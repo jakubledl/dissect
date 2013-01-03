@@ -54,7 +54,11 @@ EOT
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $class = $input->getArgument('grammar-class');
+        $class = strtr(
+            $input->getArgument('grammar-class'),
+            '/',
+            '\\'
+        );
         $formatter = $this->getHelperSet()->get('formatter');
 
         $output->writeln('<info>Analyzing...</info>');
@@ -117,7 +121,7 @@ EOT
 
             $code = $tableDumper->dump($table);
 
-            $ret = file_put_contents($fileName, $code);
+            $ret = @file_put_contents($fileName, $code);
             if ($ret === false) {
                 $output->writeln('<error>Error writing the parse table</info>');
             } else {
@@ -158,7 +162,7 @@ EOT
             }
 
             $fileName = $outputDir . DIRECTORY_SEPARATOR . $file;
-            $ret = file_put_contents($fileName, $dot);
+            $ret = @file_put_contents($fileName, $dot);
 
             if ($ret === false) {
                 $output->writeln('<error>Error writing to the file</error>');
