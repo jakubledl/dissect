@@ -55,6 +55,16 @@ class Automaton
     }
 
     /**
+     * Does this automaton have a state identified by $number?
+     *
+     * @return boolean
+     */
+    public function hasState($number)
+    {
+        return isset($this->states[$number]);
+    }
+
+    /**
      * Returns all states in this FSA.
      *
      * @return array The states of this FSA.

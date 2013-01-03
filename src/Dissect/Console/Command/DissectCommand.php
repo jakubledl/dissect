@@ -152,6 +152,18 @@ EOT
             } else {
                 $state = (int)$input->getOption('state');
 
+                if (!$automaton->hasState($state)) {
+                    $output->writeln(array(
+                        $formatter->formatBlock(
+                            sprintf('The automaton has no state #%d', $state),
+                            'error',
+                            true
+                        ),
+                    ));
+
+                    return 1;
+                }
+
                 $output->writeln(sprintf(
                     '<info>Exporting the DFA state <comment>%d</comment>...',
                     $state
@@ -170,6 +182,8 @@ EOT
                 $output->writeln('<info>Successfully exported</info>');
             }
         }
+
+        return 0;
     }
 
     protected function formatConflict(array $conflict)
@@ -179,9 +193,10 @@ EOT
             : 'reduce/reduce';
 
         return sprintf(
-            "<info>Resolved a <comment>%s</comment> conflict in state <comment>%d</comment></info>",
+            "<info>Resolved a <comment>%s</comment> conflict in state <comment>%d</comment> on lookahead <comment>%s</comment></info>",
             $type,
-            $conflict['state']
+            $conflict['state'],
+            $conflict['lookahead']
         );
     }
 }
