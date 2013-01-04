@@ -22,7 +22,10 @@ This page serves as an index for individual documentation pages.
     6. [Resolving conflicts](parsing.md#resolving-conflicts)
 3. [Building an AST](ast.md)
     1. [Travesing the AST](ast.md#traversing-the-ast)
-4. Describing common syntactic structures *todo*
-5. The command-line interface
+4. [Describing common syntactic structures](common.md)
+5. [The command-line interface](cli.md)
+    1. [Running the tool](cli.md#running-the-tool)
+    2. [Dumping the parse table in the debug format](cli.md#dumping-the-parse-table-in-the-debug-format)
+    3. [Dumping the handle-finding automaton](cli.md#dumping-the-handle-finding-automaton)
 
 [parsing]: http://en.wikipedia.org/wiki/Parsing

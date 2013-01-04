@@ -173,7 +173,7 @@ Note that we've taken care of associativity too: the first rule for
 
 will be interpreted as
 
-   (2 + 7) + 3
+    (2 + 7) + 3
 
 which is exactly what we want to achieve.
 
