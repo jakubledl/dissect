@@ -72,11 +72,11 @@ $this('Foo*')
 ...
 ```
 
-since that would allow, for example
+since that would allow the list to start with a comma:
 
-    , , , Foo , , Foo , Foo , , ,
+    , Foo , Foo , Foo
 
-as a valid input. Instead we say that a "list of zero or more `Foo`s
+Instead, we say that a "list of zero or more `Foo`s
 separated by commas" is actually "a list of one or more `Foo`s separated
 by commas or nothing at all". So our rule now becomes:
 
@@ -84,7 +84,7 @@ by commas or nothing at all". So our rule now becomes:
 $this('Foo*')
     ->is('Foo+')
 
-    ->is(/* empty *)
+    ->is(/* empty */)
     ->call(function () {
         return [];
     });
@@ -101,7 +101,7 @@ A grammar for very basic mathematical expressions is described in the
 [chapter on parsing][arith]. It would require extensive modifications to allow
 for other operators, function calls, unary operators, ternary
 operator(s), but there's a lot of grammars for practical programming
-languages that you can take inspiration from.
+languages on the internet that you can take inspiration from.
 
 For starters, take a look at [this grammar][php-grammar] for PHP itself.
 
