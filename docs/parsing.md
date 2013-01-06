@@ -10,8 +10,7 @@ from [Twig][twig] and [these][annotationsparser] [two][dqlparser] from
 [Doctrine][doctrine]. Chances are you've written one; if you did, it was
 most likely a [recursive descent parser][rdparser], just like the
 examples above. Now, such parsers have several disadvantages: first,
-they have to be manually written. That's a lot of code to write.
-Second, they're *recursive*,
+they obviously have to be manually written.  Second, they're *recursive*,
 which means one thing: nest the input deep enough (like an
 annotation, which has another annotation as a parameter, that annotation
 has another annotation as a parameter ...) and your PHP process blows up
@@ -127,7 +126,7 @@ class ArithLexer extends SimpleLexer
         $this->token('*');
         $this->token('**');
 
-        $this->regex('WSP', "/[ \r\n\t]+/");
+        $this->regex('WSP', "/^[ \r\n\t]+/");
         $this->skip('WSP');
     }
 }
@@ -209,7 +208,7 @@ $this('Power')
 ```
 
 We've reached the highest-precedence operator, so now we have to define
-what is a `Primary` expression:
+what a `Primary` expression is:
 
 ```php
 $this('Primary')
@@ -341,6 +340,7 @@ combine them any way you want:
 2. On a reduce/reduce conflict, reduce using the longer rule.
    Represented by `Grammar::LONGER_REDUCE`. Both this and the previous
    way represent the same philosophy: take the largest bite possible.
+   This is usually what the user intended to express.
 
 3. On a reduce/reduce conflict, reduce using the rule that was
    declared earlier in the grammar. Represented by

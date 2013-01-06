@@ -6,7 +6,7 @@ Often, when parsing a language that's more complex than
 the input as an *abstract syntax tree*, or AST (for a real-life
 example, see [Twig][twig-ast] or [Gherkin][gherkin-ast]).
 
-Getting the AST of the input with Dissect is nothing special, the
+Getting the AST of the input with Dissect is nothing special; the
 callbacks in your grammar can return anything, so they might as well
 return AST nodes. Dissect however helps you by providing a simple base
 class for the different node types: `Dissect\Node\CommonNode`.

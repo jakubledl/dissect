@@ -27,7 +27,7 @@ Dumping the parse table in the debug format
 -------------------------------------------
 
 By default, the parse table will be saved as a single line of PHP code,
-with almost none whitespace. If you want to inspect the generated table
+with minimal whitespace. If you want to inspect the generated table
 manually, you can use the `--debug` (or `-d`) option:
 
     $ bin/dissect <grammar-class> --debug
@@ -46,10 +46,13 @@ use the `--dfa` (or `-D`) option:
     $ bin/dissect <grammar-class> --dfa
 
 This will create a file called `automaton.dot` in the output directory.
-You can then run something like `dot -Tpng automaton.dot > automaton.png`
+You can then run something like
+
+    dot -Tpng automaton.dot > automaton.png
+
 to render it as a PNG image.
 
-Of course, for larger grammars, the automaton will quickly become rather large
+Of course, for more complex grammars, the automaton will quickly become rather large
 and unwieldy. You can then use the `--state` (or `-s`) option to dump
 only the specified state:
 

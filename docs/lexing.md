@@ -43,7 +43,7 @@ recognized (second argument).
 The final way defines a token by a regular expression:
 
 ```php
-$this->regex('INT', '/[1-9][0-9]*/');
+$this->regex('INT', '/^[1-9][0-9]*/');
 ```
 
 Let's now define some tokens we will use in the next chapter:
@@ -53,7 +53,7 @@ class ArithLexer extends SimpleLexer
 {
     public function __construct()
     {
-        $this->regex('INT', '/[1-9][0-9]*/');
+        $this->regex('INT', '/^[1-9][0-9]*/');
         $this->token('(');
         $this->token(')');
         $this->token('+');
@@ -84,7 +84,7 @@ class ArithLexer extends SimpleLexer
         $this->token('*');
         $this->token('**');
 
-        $this->regex('WSP', "/[ \r\n\t]+/");
+        $this->regex('WSP', "/^[ \r\n\t]+/");
         $this->skip('WSP');
     }
 }
@@ -142,12 +142,12 @@ class TemplateLexer extends StatefulLexer
     public function __construct()
     {
         $lexer->state('outside')
-            ->regex('CONTENT', '/[^"{{"]*/')
+            ->regex('CONTENT', '/^[^"{{"]*/')
             ->token('{{')->action('tag');
 
         $lexer->state('tag')
-            ->regex('WSP', "/[ \r\n\t]+/")
-            ->regex('VAR', '/[a-zA-Z_]+/')
+            ->regex('WSP', "/^[ \r\n\t]+/")
+            ->regex('VAR', '/^[a-zA-Z_]+/')
             ->token('}}')->action(StatefulLexer::POP_STATE)
             ->skip('WSP');
 
@@ -168,8 +168,7 @@ Improving lexer performance
 ---------------------------
 
 There's one important trick to improve the performance of your lexers.
-Both the examples and Dissect's unit tests omit it for clarity, however,
-for practical uses, it's a necessity.
+The documentation uses it implicitly, but it requires an explicit mention:
 
 When defining tokens using regular expressions, *always* anchor the
 regex at the beginning using `^` like this:
