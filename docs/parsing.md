@@ -282,7 +282,7 @@ we then save to a file. To do this, we can use either
 `Dissect\Parser\LALR1\Dumper\ProductionTableDumper`:
 
 ```php
-$dumper = new ProductionTableDumper()
+$dumper = new ProductionTableDumper();
 $php = $dumper->dump($parseTable);
 ```
 
