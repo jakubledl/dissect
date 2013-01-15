@@ -39,9 +39,15 @@ EOT;
         $this->token = $token;
         $this->expected = $expected;
 
+        if ($token->getValue() !== $token->getType()) {
+            $info = $token->getValue() . ' (' . $token->getType() . ')';
+        } else {
+            $info = $token->getType();
+        }
+
         parent::__construct(sprintf(
             self::MESSAGE,
-            $token->getType(),
+            $info,
             $token->getLine(),
             implode(', ', $expected)
         ));

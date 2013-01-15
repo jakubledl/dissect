@@ -31,11 +31,17 @@ class ParserTest extends PHPUnit_Framework_TestCase
     public function parserShouldThrowAnExceptionOnInvalidInput()
     {
         try {
-            $this->parser->parse($this->lexer->lex('6 ** ( * 5'));
+            $this->parser->parse($this->lexer->lex('6 ** 5 3'));
             $this->fail('Expected an UnexpectedTokenException.');
         } catch (UnexpectedTokenException $e) {
-            $this->assertEquals('*', $e->getToken()->getType());
-            $this->assertEquals(array('INT',  '('), $e->getExpected());
+            $this->assertEquals('INT', $e->getToken()->getType());
+            $this->assertEquals(array('$eof', '+', '*', '**', ')'), $e->getExpected());
+            $this->assertEquals(<<<EOT
+Unexpected 3 (INT) at line 1.
+
+Expected one of \$eof, +, *, **, ).
+EOT
+            , $e->getMessage());
         }
     }
 }
