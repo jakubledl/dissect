@@ -4,6 +4,7 @@ namespace Dissect\Parser\LALR1\Analysis;
 
 use Dissect\Parser\LALR1\Analysis\Exception\ReduceReduceConflictException;
 use Dissect\Parser\LALR1\Analysis\Exception\ShiftReduceConflictException;
+use Dissect\Parser\LALR1\Analysis\KernelSet\KernelSet;
 use Dissect\Parser\Grammar;
 use Dissect\Parser\Parser;
 use Dissect\Util\Util;
@@ -47,12 +48,8 @@ class Analyzer
         // the queue of states that need processing
         $queue = new SplQueue();
 
-        // holds the origins of different states.
-        // an origin is a map 'rule number' -> 'unsorted rule positions'
-        $origins = array();
-
-        // states are numbered sequentially
-        $nextStateNumber = 0;
+        // the BST for state kernels
+        $kernelSet = new KernelSet();
 
         // rules grouped by their name
         $groupedRules = $grammar->getGroupedRules();
@@ -65,11 +62,13 @@ class Analyzer
         $pumpings = array();
 
         // the item from which the whole automaton
-        // is deriveed
+        // is derived
         $initialItem = new Item($grammar->getStartRule(), 0);
 
         // construct the initial state
-        $state = new State($nextStateNumber++, array($initialItem));
+        $state = new State($kernelSet->insert(array(
+            array($initialItem->getRule()->getNumber(), $initialItem->getDotIndex()),
+        )), array($initialItem));
 
         // the initial item automatically has EOF
         // as its lookahead
@@ -185,70 +184,23 @@ class Analyzer
 
             // calculate transitions
             foreach ($groupedItems as $thisComponent => $theseItems) {
-                $currentOrigin = array();
+                $newKernel = array();
 
                 foreach ($theseItems as $thisItem) {
-                    // calculate the origin of the state that
-                    // would result by the transition from this
-                    // state by $thisComponent
-                    $currentOrigin[$thisItem->getRule()->getNumber()][] =
-                        $thisItem->getDotIndex();
+                    $newKernel[] = array(
+                        $thisItem->getRule()->getNumber(),
+                        $thisItem->getDotIndex() + 1,
+                    );
                 }
 
-                $n = null;
+                $num = $kernelSet->insert($newKernel);
 
-                foreach ($origins as $number => $map) {
-                    $match = true;
-
-                    // the origins match iff the rules are same
-                    foreach ($currentOrigin as $ruleNum => $positions) {
-
-                        if (count($currentOrigin) !== count($map)
-                            || !isset($map[$ruleNum])
-                            // the comparison of positions is order-insensitive
-                            || (array_diff($map[$ruleNum], $positions) !== array_diff($positions, $map[$ruleNum]))) {
-                            $match = false;
-
-                            break;
-                        }
-                    }
-
-                    if ($match) {
-                        // if there was a match, the state already exists
-                        // and is identified by $number
-                        $n = $number;
-                        break;
-                    }
-                }
-
-                if ($n === null) {
-                    // no match, we have to create a new state
-                    $num = $nextStateNumber++;
-                    $newState = new State($num, array_map(function (Item $i) {
-                        $new = new Item($i->getRule(), $i->getDotIndex() + 1);
-
-                        // if there's a transition from state a to state b by
-                        // x, the rules A -> foo . x in state a and
-                        // A -> foo x . in state b are connected
-                        $i->connect($new);
-
-                        return $new;
-                    }, $theseItems));
-
-                    $automaton->addState($newState);
-                    $queue->enqueue($newState);
-
-                    // store the origin of the new state
-                    $origins[$num] = $currentOrigin;
-
+                if ($automaton->hasState($num)) {
+                    // the state already exists
                     $automaton->addTransition($state->getNumber(), $thisComponent, $num);
-                } else {
-                    // if there was a match, we have to extract
-                    // the following items from the existing state
-                    $automaton->addTransition($state->getNumber(), $thisComponent, $n);
 
-                    // which is this one
-                    $nextState = $automaton->getState($n);
+                    // extract the connected items from the target state
+                    $nextState = $automaton->getState($num);
 
                     foreach ($theseItems as $thisItem) {
                         $thisItem->connect(
@@ -258,6 +210,21 @@ class Analyzer
                             )
                         );
                     }
+                } else {
+                    // new state needs to be created
+                    $newState = new State($num, array_map(function (Item $i) {
+                        $new = new Item($i->getRule(), $i->getDotIndex() + 1);
+
+                        // connect the two items
+                        $i->connect($new);
+
+                        return $new;
+                    }, $theseItems));
+
+                    $automaton->addState($newState);
+                    $queue->enqueue($newState);
+
+                    $automaton->addTransition($state->getNumber(), $thisComponent, $num);
                 }
             }
         }

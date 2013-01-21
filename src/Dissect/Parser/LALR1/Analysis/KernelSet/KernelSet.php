@@ -11,7 +11,7 @@ namespace Dissect\Parser\LALR1\Analysis\KernelSet;
 class KernelSet
 {
     protected $nextNumber = 0;
-    public $root = null;
+    protected $root = null;
 
     /**
      * Inserts a new node in the BST and returns
