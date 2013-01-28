@@ -5,7 +5,7 @@ Goals
 ---
 
 - Optional operator precedence support (à la *yacc*, *bison*).
-- A performance-oriented regex lexer (based on doctrine/lexer).
+- A performance-oriented regex lexer (based on doctrine/lexer) - &#10004;
 
 1.0
 ---

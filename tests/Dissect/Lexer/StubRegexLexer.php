@@ -2,6 +2,8 @@
 
 namespace Dissect\Lexer;
 
+use RuntimeException;
+
 class StubRegexLexer extends RegexLexer
 {
     protected $operators = array('+', '-');
