@@ -44,12 +44,12 @@ abstract class RegexLexer implements Lexer
                 $line += substr_count($string, "\n", $oldPosition, $position - $oldPosition);
             }
 
-            $oldPosition += $position;
+            $oldPosition = $position;
 
             $tokens[] = new CommonToken($type, $value, $line);
         }
 
-        $tokens[] = new CommonToken(Parser::EOF_TOKEN_TYPE, '', 1);
+        $tokens[] = new CommonToken(Parser::EOF_TOKEN_TYPE, '', $line);
 
         return new ArrayTokenStream($tokens);
     }

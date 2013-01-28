@@ -1,8 +1,8 @@
 Lexical analysis with Dissect
 =============================
 
-There are two classes for lexical analysis in Dissect, both under the
-namespace `Dissect\Lexer`: `SimpleLexer` and `StatefulLexer`.
+There are three classes for lexical analysis in Dissect, all under the
+namespace `Dissect\Lexer`: `SimpleLexer`, `StatefulLexer` and `RegexLexer`.
 
 SimpleLexer
 -----------
@@ -170,8 +170,9 @@ Improving lexer performance
 There's one important trick to improve the performance of your lexers.
 The documentation uses it implicitly, but it requires an explicit mention:
 
-When defining tokens using regular expressions, *always* anchor the
-regex at the beginning using `^` like this:
+When using one of the lexer classes documented above and defining tokens
+using regular expressions, *always* anchor the regex at the beginning
+using `^` like this:
 
 ```php
 $this->regex('INT', '/^[1-9][0-9]*/');
@@ -182,6 +183,52 @@ any but the shortest input strings, since without anchoring, the PCRE
 engine would always look for matches throughout the entire remaining
 input string, which would be incredibly wasteful for long inputs.
 
+RegexLexer
+----------
+
+When designing the lexer classes, my goal was not to sacrifice
+user-friendliness for performance. However, I'm well aware that there
+are use cases that require the highest performace possible. That's
+why I adapted the highly performant but slightly less user-friendly
+[lexer][doctrinelexer] from [doctrine][doctrine] into Dissect.
+
+The usage is almost identical to the original class, writing a lexer
+for the arithmetic expressions could look something like this:
+
+```php
+use Dissect\Lexer\RegexLexer;
+use RuntimeException;
+
+class ArithLexer extends RegexLexer
+{
+    protected $tokens = ['+', '*', '**', '(', ')'];
+
+    protected function getCatchablePatterns()
+    {
+        return ['[1-9][0-9]*'];
+    }
+
+    protected function getNonCatchablePatterns()
+    {
+        return ['\s+'];
+    }
+
+    protected function getType(&$value)
+    {
+        if (is_numeric($value)) {
+            $value = (int)$value;
+
+            return 'INT';
+        } elseif (in_array($value, $this->tokens)) {
+            // the types of the simple tokens equal their values here
+            return $value;
+        } else {
+            throw new RuntimeException(sprintf('Invalid token "%s"', $value));
+        }
+    }
+}
+```
+
 Continue
 --------
 
@@ -191,3 +238,5 @@ Dissect, we can move onto syntactical analysis, commonly known as
 
 [tokenstream]: ../src/Dissect/Lexer/TokenStream/TokenStream.php
 [parsing]: parsing.md
+[doctrinelexer]: https://github.com/doctrine/lexer/blob/master/lib/Doctrine/Common/Lexer/AbstractLexer.php
+[doctrine]: https://github.com/doctrine/lexer
