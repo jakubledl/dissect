@@ -123,7 +123,7 @@ EOT
 
             $ret = @file_put_contents($fileName, $code);
             if ($ret === false) {
-                $output->writeln('<error>Error writing the parse table</info>');
+                $output->writeln('<error>Error writing the parse table</error>');
             } else {
                 $output->writeln('<info>Parse table written</info>');
             }
