@@ -282,6 +282,62 @@ class Analyzer
                             $instruction = $table['action'][$num][$token];
 
                             if ($instruction > 0) {
+                                if ($conflictsMode & Grammar::OPERATORS) {
+                                    if ($grammar->hasOperator($token)) {
+                                        $operatorInfo = $grammar->getOperatorInfo($token);
+
+                                        $rulePrecedence = $item->getRule()->getPrecedence();
+
+                                        // unless the rule has given precedence
+                                        if ($rulePrecedence === null) {
+                                            foreach (array_reverse($item->getRule()->getComponents()) as $c) {
+                                                // try to extract it from the rightmost terminal
+                                                if ($grammar->hasOperator($c)) {
+                                                    $ruleOperatorInfo = $grammar->getOperatorInfo($c);
+                                                    $rulePrecedence = $ruleOperatorInfo['prec'];
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if ($rulePrecedence !== null) {
+                                            // if we actually have a rule precedence
+
+                                            $tokenPrecedence = $operatorInfo['prec'];
+
+                                            if ($rulePrecedence > $tokenPrecedence) {
+                                                // if the rule precedence is higher, reduce
+                                                $table['action'][$num][$token] = -$item->getRule()->getNumber();
+                                            } elseif ($rulePrecedence < $tokenPrecedence) {
+                                                // if the token precedence is higher, shift
+                                                // (i.e. don't modify the table)
+                                            } else {
+                                                // precedences are equal, let's turn to associativity
+                                                $assoc = $operatorInfo['assoc'];
+
+                                                if ($assoc === Grammar::RIGHT) {
+                                                    // if right-associative, shift
+                                                    // (i.e. don't modify the table)
+                                                } elseif ($assoc === Grammar::LEFT) {
+                                                    // if left-associative, reduce
+                                                    $table['action'][$num][$token] = -$item->getRule()->getNumber();
+                                                } elseif ($assoc === Grammar::NONASSOC) {
+                                                    // the token is nonassociative.
+                                                    // this actually means an input error, so remove
+                                                    // the shift entry from the table.
+                                                    unset($table['action'][$num][$token]);
+                                                }
+                                            }
+
+                                            continue; // resolved the conflict, phew
+                                        }
+
+                                        // we couldn't calculate the precedence => the conflict was not resolved
+                                        // move along.
+                                    }
+                                }
+
                                 // s/r
                                 if ($conflictsMode & Grammar::SHIFT) {
                                     $conflicts[] = array(
