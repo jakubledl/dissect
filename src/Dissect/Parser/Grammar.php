@@ -40,7 +40,7 @@ class Grammar
     /**
      * @var int
      */
-    protected $conflictsMode = self::SHIFT;
+    protected $conflictsMode = 9; // SHIFT | OPERATORS
 
     /**
      * @var string
@@ -51,6 +51,16 @@ class Grammar
      * @var \Dissect\Parser\Rule
      */
     protected $currentRule;
+
+    /**
+     * @var array
+     */
+    protected $operators = array();
+
+    /**
+     * @var array
+     */
+    protected $currentOperators;
 
     /**
      * Signifies that the parser should not resolve any
@@ -91,6 +101,21 @@ class Grammar
      * resolve all grammar conflicts.
      */
     const ALL = 15;
+
+    /**
+     * Left operator associativity.
+     */
+    const LEFT = 0;
+
+    /**
+     * Right operator associativity.
+     */
+    const RIGHT = 1;
+
+    /**
+     * The operator is nonassociative.
+     */
+    const NONASSOC = 2;
 
     public function __invoke($nonterminal)
     {
@@ -235,5 +260,121 @@ class Grammar
     public function hasNonterminal($name)
     {
         return array_key_exists($name, $this->groupedRules);
+    }
+
+    /**
+     * Defines a group of operators.
+     *
+     * @param string,... Any number of tokens that serve as the operators.
+     *
+     * @return \Dissect\Parser\Grammar This instance for fluent interface.
+     */
+    public function operators()
+    {
+        $ops = func_get_args();
+
+        $this->currentOperators = $ops;
+
+        foreach ($ops as $op) {
+            $this->operators[$op] = array(
+                'prec' => 1,
+                'assoc' => self::LEFT,
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * Marks the current group of operators as left-associative.
+     *
+     * @return \Dissect\Parser\Grammar This instance for fluent interface.
+     */
+    public function left()
+    {
+        return $this->assoc(self::LEFT);
+    }
+
+    /**
+     * Marks the current group of operators as right-associative.
+     *
+     * @return \Dissect\Parser\Grammar This instance for fluent interface.
+     */
+    public function right()
+    {
+        return $this->assoc(self::RIGHT);
+    }
+
+    /**
+     * Marks the current group of operators as nonassociative.
+     *
+     * @return \Dissect\Parser\Grammar This instance for fluent interface.
+     */
+    public function nonassoc()
+    {
+        return $this->assoc(self::NONASSOC);
+    }
+
+    /**
+     * Explicitly sets the associatity of the current group of operators.
+     *
+     * @param int $a One of Grammar::LEFT, Grammar::RIGHT, Grammar::NONASSOC
+     *
+     * @return \Dissect\Parser\Grammar This instance for fluent interface.
+     */
+    public function assoc($a)
+    {
+        if (!$this->currentOperators) {
+            throw new LogicException('Define a group of operators first.');
+        }
+
+        foreach ($this->currentOperators as $op) {
+            $this->operators[$op]['assoc'] = $a;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Sets the precedence (as an integer) of the current group of operators.
+     * If no group of operators is being specified, sets the precedence
+     * of the currently described rule.
+     *
+     * @param int $i The precedence as an integer.
+     *
+     * @return \Dissect\Parser\Grammar This instance for fluent interface.
+     */
+    public function prec($i)
+    {
+        if (!$this->currentOperators) {
+            if (!$this->currentRule) {
+                throw new LogicException('Define a group of operators first.');
+            } else {
+                $this->currentRule->setPrecedence($i);
+            }
+        } else {
+            foreach ($this->currentOperators as $op) {
+                $this->operators[$op]['prec'] = $i;
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Is the passed token an operator?
+     *
+     * @param string $token The token type.
+     *
+     * @return boolean
+     */
+    public function hasOperator($token)
+    {
+        return array_key_exists($token, $this->operators);
+    }
+
+    public function getOperatorInfo($token)
+    {
+        return $this->operators[$token];
     }
 }

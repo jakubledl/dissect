@@ -30,6 +30,11 @@ class Rule
     protected $callback = null;
 
     /**
+     * @var int
+     */
+    protected $precedence = null;
+
+    /**
      * Constructor.
      *
      * @param int $number The number of the rule in the grammar.
@@ -103,5 +108,15 @@ class Rule
     public function getCallback()
     {
         return $this->callback;
+    }
+
+    public function getPrecedence()
+    {
+        return $this->precedence;
+    }
+
+    public function setPrecedence($i)
+    {
+        $this->precedence = $i;
     }
 }
