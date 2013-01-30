@@ -80,10 +80,17 @@ class Grammar
     const EARLIER_REDUCE = 4;
 
     /**
+     * Signifies that the conflicts should be
+     * resolved by taking operator precendence
+     * into account.
+     */
+    const OPERATORS = 8;
+
+    /**
      * Signifies that the parser should automatically
      * resolve all grammar conflicts.
      */
-    const ALL = 7;
+    const ALL = 15;
 
     public function __invoke($nonterminal)
     {
@@ -216,5 +223,17 @@ class Grammar
     public function getConflictsMode()
     {
         return $this->conflictsMode;
+    }
+
+    /**
+     * Does a nonterminal $name exist in the grammar?
+     *
+     * @param string $name The name of the nonterminal.
+     *
+     * @return boolean
+     */
+    public function hasNonterminal($name)
+    {
+        return array_key_exists($name, $this->groupedRules);
     }
 }
