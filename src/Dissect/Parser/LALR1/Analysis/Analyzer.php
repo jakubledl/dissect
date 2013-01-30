@@ -96,14 +96,14 @@ class Analyzer
                     $groupedItems[$component][] = $item;
 
                     // if nonterminal
-                    if (array_key_exists($component, $groupedRules)) {
+                    if ($grammar->hasNonterminal($component)) {
 
                         // calculate lookahead
                         $lookahead = array();
                         $cs = $item->getUnrecognizedComponents();
 
                         foreach ($cs as $i => $c) {
-                            if (!array_key_exists($c, $groupedRules)) {
+                            if (!$grammar->hasNonterminal($c)) {
                                 // if terminal, add it and break the loop
                                 $lookahead = Util::union($lookahead, array($c));
 
@@ -246,7 +246,6 @@ class Analyzer
      */
     protected function buildParseTable(Automaton $automaton, Grammar $grammar)
     {
-        $nonterminals = array_keys($grammar->getGroupedRules());
         $conflictsMode = $grammar->getConflictsMode();
         $conflicts = array();
 
@@ -258,7 +257,7 @@ class Analyzer
 
         foreach ($automaton->getTransitionTable() as $num => $transitions) {
             foreach ($transitions as $trigger => $destination) {
-                if (!in_array($trigger, $nonterminals)) {
+                if (!$grammar->hasNonterminal($trigger)) {
                     // terminal implies shift
                     $table['action'][$num][$trigger] = $destination;
                 } else {
