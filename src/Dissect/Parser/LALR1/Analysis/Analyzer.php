@@ -248,6 +248,7 @@ class Analyzer
     {
         $conflictsMode = $grammar->getConflictsMode();
         $conflicts = array();
+        $errors = array();
 
         // initialize the table
         $table = array(
@@ -277,6 +278,13 @@ class Analyzer
                     $ruleNumber = $item->getRule()->getNumber();
 
                     foreach ($item->getLookahead() as $token) {
+                        if (isset($errors[$num]) && isset($errors[$num][$token])) {
+                            // there was a previous conflict resolved as an error
+                            // entry for this token.
+
+                            continue;
+                        }
+
                         if (array_key_exists($token, $table['action'][$num])) {
                             // conflict
                             $instruction = $table['action'][$num][$token];
@@ -308,7 +316,7 @@ class Analyzer
 
                                             if ($rulePrecedence > $tokenPrecedence) {
                                                 // if the rule precedence is higher, reduce
-                                                $table['action'][$num][$token] = -$item->getRule()->getNumber();
+                                                $table['action'][$num][$token] = -$ruleNumber;
                                             } elseif ($rulePrecedence < $tokenPrecedence) {
                                                 // if the token precedence is higher, shift
                                                 // (i.e. don't modify the table)
@@ -321,12 +329,15 @@ class Analyzer
                                                     // (i.e. don't modify the table)
                                                 } elseif ($assoc === Grammar::LEFT) {
                                                     // if left-associative, reduce
-                                                    $table['action'][$num][$token] = -$item->getRule()->getNumber();
+                                                    $table['action'][$num][$token] = -$ruleNumber;
                                                 } elseif ($assoc === Grammar::NONASSOC) {
                                                     // the token is nonassociative.
-                                                    // this actually means an input error, so remove
-                                                    // the shift entry from the table.
+                                                    // this actually means an input error, so
+                                                    // remove the shift entry from the table
+                                                    // and mark this as an explicit error
+                                                    // entry
                                                     unset($table['action'][$num][$token]);
+                                                    $errors[$num][$token] = true;
                                                 }
                                             }
 

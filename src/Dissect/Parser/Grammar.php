@@ -133,6 +133,8 @@ class Grammar
      */
     public function is()
     {
+        $this->currentOperators = null;
+
         if ($this->currentNonterminal === null) {
             throw new LogicException(
                 'You must specify a name of the rule first.'
@@ -271,6 +273,8 @@ class Grammar
      */
     public function operators()
     {
+        $this->currentRule = null;
+
         $ops = func_get_args();
 
         $this->currentOperators = $ops;
@@ -348,7 +352,7 @@ class Grammar
     {
         if (!$this->currentOperators) {
             if (!$this->currentRule) {
-                throw new LogicException('Define a group of operators first.');
+                throw new LogicException('Define a group of operators or a rule first.');
             } else {
                 $this->currentRule->setPrecedence($i);
             }

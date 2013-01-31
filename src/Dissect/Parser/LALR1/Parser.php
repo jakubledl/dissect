@@ -22,7 +22,7 @@ class Parser implements P\Parser
     /**
      * @var array
      */
-    public $parseTable;
+    protected $parseTable;
 
     /**
      * Constructor.
