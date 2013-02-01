@@ -406,19 +406,30 @@ that they contain 2 types of conflicts:
 - **Reduce/Reduce conflicts** - the parser can reduce by multiple
   grammar rules.
 
-There are 3 commonly used ways of resolving such conflicts and Dissect allows you to
+There are 4 commonly used ways of resolving such conflicts and Dissect allows you to
 combine them any way you want:
 
-1. On a shift/reduce conflict, always shift. This is represented by
-   the constant `Grammar::SHIFT` and is so common that Dissect enables
-   it by default.
+1. On a shift/reduce conflict, consult the operators precedence
+   and associativity information. The rules for resolution are a little
+   complicated, but the conflict may be resolved as a reduce (either the
+   precedence of the rule is higher than that of the shifted token or the
+   token is left-associative), a shift (the rule precedence is lower or the
+   token is right-associative) or even as an error (when the token is
+   nonassociative). Note that Dissect doesn't report conflicts resolved
+   using this technique, since they were intentionally created by the user
+   and therefore are not really conflicts. Represented by the
+   constant `Grammar::OPERATORS`.
 
-2. On a reduce/reduce conflict, reduce using the longer rule.
+2. On a shift/reduce conflict, always shift. This is represented by
+   the constant `Grammar::SHIFT` and, together with the above method,
+   is enabled by default.
+
+3. On a reduce/reduce conflict, reduce using the longer rule.
    Represented by `Grammar::LONGER_REDUCE`. Both this and the previous
    way represent the same philosophy: take the largest bite possible.
    This is usually what the user intended to express.
 
-3. On a reduce/reduce conflict, reduce using the rule that was
+4. On a reduce/reduce conflict, reduce using the rule that was
    declared earlier in the grammar. Represented by
    `Grammar::EARLIER_REDUCE`.
 
@@ -426,12 +437,13 @@ To specify precisely how should Dissect resolve parse table conflicts,
 call `resolve` on your grammar:
 
 ```php
-$this->resolve(Grammar::SHIFT | Grammar::LONGER_REDUCE);
+$this->resolve(Grammar::SHIFT | Grammar::OPERATORS | Grammar::LONGER_REDUCE);
 ```
 
 There are two other constants: `Grammar::NONE` that forbids any
-conflicts in the grammar and `Grammar::ALL`, which is a combination
-of all the 3 above methods defined simply for convenience.
+conflicts in the grammar (even the operators-related ones) and
+`Grammar::ALL`, which is a combination of all the 3 above methods
+defined simply for convenience.
 
 [twigparser]: https://github.com/fabpot/Twig/blob/master/lib/Twig/Parser.php
 [twig]: https://github.com/fabpot/Twig
