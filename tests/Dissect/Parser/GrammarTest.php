@@ -48,4 +48,12 @@ class GrammarTest extends PHPUnit_Framework_TestCase
         $rules = $this->grammar->getGroupedRules();
         $this->assertCount(2, $rules['Foo']);
     }
+
+    /**
+     * @test
+     */
+    public function nonterminalsShouldBeDetectedFromRuleNames()
+    {
+        $this->assertTrue($this->grammar->hasNonterminal('Foo'));
+    }
 }

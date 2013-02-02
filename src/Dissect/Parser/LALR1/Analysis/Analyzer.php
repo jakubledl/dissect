@@ -96,14 +96,14 @@ class Analyzer
                     $groupedItems[$component][] = $item;
 
                     // if nonterminal
-                    if (array_key_exists($component, $groupedRules)) {
+                    if ($grammar->hasNonterminal($component)) {
 
                         // calculate lookahead
                         $lookahead = array();
                         $cs = $item->getUnrecognizedComponents();
 
                         foreach ($cs as $i => $c) {
-                            if (!array_key_exists($c, $groupedRules)) {
+                            if (!$grammar->hasNonterminal($c)) {
                                 // if terminal, add it and break the loop
                                 $lookahead = Util::union($lookahead, array($c));
 
@@ -246,9 +246,9 @@ class Analyzer
      */
     protected function buildParseTable(Automaton $automaton, Grammar $grammar)
     {
-        $nonterminals = array_keys($grammar->getGroupedRules());
         $conflictsMode = $grammar->getConflictsMode();
         $conflicts = array();
+        $errors = array();
 
         // initialize the table
         $table = array(
@@ -258,7 +258,7 @@ class Analyzer
 
         foreach ($automaton->getTransitionTable() as $num => $transitions) {
             foreach ($transitions as $trigger => $destination) {
-                if (!in_array($trigger, $nonterminals)) {
+                if (!$grammar->hasNonterminal($trigger)) {
                     // terminal implies shift
                     $table['action'][$num][$trigger] = $destination;
                 } else {
@@ -278,11 +278,77 @@ class Analyzer
                     $ruleNumber = $item->getRule()->getNumber();
 
                     foreach ($item->getLookahead() as $token) {
+                        if (isset($errors[$num]) && isset($errors[$num][$token])) {
+                            // there was a previous conflict resolved as an error
+                            // entry for this token.
+
+                            continue;
+                        }
+
                         if (array_key_exists($token, $table['action'][$num])) {
                             // conflict
                             $instruction = $table['action'][$num][$token];
 
                             if ($instruction > 0) {
+                                if ($conflictsMode & Grammar::OPERATORS) {
+                                    if ($grammar->hasOperator($token)) {
+                                        $operatorInfo = $grammar->getOperatorInfo($token);
+
+                                        $rulePrecedence = $item->getRule()->getPrecedence();
+
+                                        // unless the rule has given precedence
+                                        if ($rulePrecedence === null) {
+                                            foreach (array_reverse($item->getRule()->getComponents()) as $c) {
+                                                // try to extract it from the rightmost terminal
+                                                if ($grammar->hasOperator($c)) {
+                                                    $ruleOperatorInfo = $grammar->getOperatorInfo($c);
+                                                    $rulePrecedence = $ruleOperatorInfo['prec'];
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if ($rulePrecedence !== null) {
+                                            // if we actually have a rule precedence
+
+                                            $tokenPrecedence = $operatorInfo['prec'];
+
+                                            if ($rulePrecedence > $tokenPrecedence) {
+                                                // if the rule precedence is higher, reduce
+                                                $table['action'][$num][$token] = -$ruleNumber;
+                                            } elseif ($rulePrecedence < $tokenPrecedence) {
+                                                // if the token precedence is higher, shift
+                                                // (i.e. don't modify the table)
+                                            } else {
+                                                // precedences are equal, let's turn to associativity
+                                                $assoc = $operatorInfo['assoc'];
+
+                                                if ($assoc === Grammar::RIGHT) {
+                                                    // if right-associative, shift
+                                                    // (i.e. don't modify the table)
+                                                } elseif ($assoc === Grammar::LEFT) {
+                                                    // if left-associative, reduce
+                                                    $table['action'][$num][$token] = -$ruleNumber;
+                                                } elseif ($assoc === Grammar::NONASSOC) {
+                                                    // the token is nonassociative.
+                                                    // this actually means an input error, so
+                                                    // remove the shift entry from the table
+                                                    // and mark this as an explicit error
+                                                    // entry
+                                                    unset($table['action'][$num][$token]);
+                                                    $errors[$num][$token] = true;
+                                                }
+                                            }
+
+                                            continue; // resolved the conflict, phew
+                                        }
+
+                                        // we couldn't calculate the precedence => the conflict was not resolved
+                                        // move along.
+                                    }
+                                }
+
                                 // s/r
                                 if ($conflictsMode & Grammar::SHIFT) {
                                     $conflicts[] = array(
