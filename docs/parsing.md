@@ -309,7 +309,7 @@ nonassociative, which means that for an operator `op`, the input
 `a op b op c` means neither `(a op b) op c` or `a op (b op c)`,
 but is considered a syntax error.
 
-This has certain use cases; for instance, on of the nonassociative
+This has certain use cases; for instance, one of the nonassociative
 operators in the grammar for PHP is `<`: when parsing `1 < 2 < 3`,
 the PHP parser reports a syntax error.
 
@@ -442,7 +442,7 @@ $this->resolve(Grammar::SHIFT | Grammar::OPERATORS | Grammar::LONGER_REDUCE);
 
 There are two other constants: `Grammar::NONE` that forbids any
 conflicts in the grammar (even the operators-related ones) and
-`Grammar::ALL`, which is a combination of all the 3 above methods
+`Grammar::ALL`, which is a combination of all the 4 above methods
 defined simply for convenience.
 
 [twigparser]: https://github.com/fabpot/Twig/blob/master/lib/Twig/Parser.php
