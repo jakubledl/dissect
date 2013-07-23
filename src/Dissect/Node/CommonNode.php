@@ -25,7 +25,7 @@ class CommonNode implements Node
      * Constructor.
      *
      * @param array $attributes The attributes of this node.
-     * @param array $children The children of this node.
+     * @param array $nodes The children of this node.
      */
     public function __construct(array $attributes = array(), array $nodes = array())
     {
@@ -54,7 +54,7 @@ class CommonNode implements Node
      */
     public function getNode($key)
     {
-        if (!isset($this->children[$key])) {
+        if (!isset($this->nodes[$key])) {
             throw new RuntimeException(sprintf('No child node "%s" exists.', $key));
         }
 
@@ -66,7 +66,7 @@ class CommonNode implements Node
      */
     public function setNode($key, Node $child)
     {
-        $this->children[$key] = $child;
+        $this->nodes[$key] = $child;
     }
 
     /**
@@ -74,7 +74,7 @@ class CommonNode implements Node
      */
     public function removeNode($key)
     {
-        unset($this->children[$key]);
+        unset($this->nodes[$key]);
     }
 
     /**
@@ -123,11 +123,11 @@ class CommonNode implements Node
 
     public function count()
     {
-        return count($this->children);
+        return count($this->nodes);
     }
 
     public function getIterator()
     {
-        return new ArrayIterator($this->children);
+        return new ArrayIterator($this->nodes);
     }
 }
