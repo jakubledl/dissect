@@ -422,14 +422,14 @@ class Analyzer
                                     } else {
                                         // new rule was earlier
                                         $table['action'][$num][$token] = -$ruleNumber;
+                                        $resolvedRules = array($newRule, $originalRule);
 
                                         $conflicts[] = array(
                                             'state' => $num,
                                             'lookahead' => $token,
                                             'rules' => $resolvedRules,
                                             'resolution' => Grammar::EARLIER_REDUCE,
-                                        );
-                                        $resolvedRules = array($newRule, $originalRule);
+                                        );                                        
 
                                         continue;
                                     }
