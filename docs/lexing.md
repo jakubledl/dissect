@@ -141,17 +141,17 @@ class TemplateLexer extends StatefulLexer
 {
     public function __construct()
     {
-        $lexer->state('outside')
+        $this->state('outside')
             ->regex('CONTENT', '/^[^"{{"]*/')
             ->token('{{')->action('tag');
 
-        $lexer->state('tag')
+        $this->state('tag')
             ->regex('WSP', "/^[ \r\n\t]+/")
             ->regex('VAR', '/^[a-zA-Z_]+/')
             ->token('}}')->action(StatefulLexer::POP_STATE)
             ->skip('WSP');
 
-        $lexer->start('outside');
+        $this->start('outside');
     }
 }
 ```
