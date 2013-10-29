@@ -11,17 +11,22 @@ use RuntimeException;
  */
 class RecognitionException extends RuntimeException
 {
-    protected $sourceLine;
+    protected $parameter;
+    protected $position;
+    protected $line;
 
     /**
      * Constructor.
      *
      * @param string $parameter The unrecognised parameter.
-     * @param int position The character position within the current line where $parameter is located
+     * @param int position The character position within the current line where $parameter is located.
      * @param int $line The line in the source where $parameter is located.
      */
     public function __construct($parameter, $position, $line)
     {
+        $this->parameter = $parameter;
+        $this->position = $position;
+        $this->line = $line;
         $message = sprintf(
             'Invalid Parameter "%s" at line %d position %d',
             $parameter,
@@ -32,12 +37,17 @@ class RecognitionException extends RuntimeException
         parent::__construct($message);
     }
 
-    /**
-     * Returns the source line number where the exception occured.
-     *
-     * @return int The source line number.
-     */
-    public function getSourceLine()
+    public function getParameter()
+    {
+        return $this->parameter();
+    }
+
+    public function getPosition()
+    {
+        return $this->position;
+    }
+
+    public function getLine()
     {
         return $this->sourceLine;
     }
