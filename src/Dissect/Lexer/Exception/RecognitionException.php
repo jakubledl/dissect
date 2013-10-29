@@ -16,13 +16,20 @@ class RecognitionException extends RuntimeException
     /**
      * Constructor.
      *
-     * @param int $line The line in the source.
+     * @param string $parameter The unrecognised parameter.
+     * @param int position The character position within the current line where $parameter is located
+     * @param int $line The line in the source where $parameter is located.
      */
-    public function __construct($line)
+    public function __construct($parameter, $position, $line)
     {
-        $this->sourceLine = $line;
+        $message = sprintf(
+            'Invalid Parameter "%s" at line %d position %d',
+            $parameter,
+            $line,
+            $position
+        );
 
-        parent::__construct(sprintf("Cannot extract another token at line %d.", $line));
+        parent::__construct($message);
     }
 
     /**
