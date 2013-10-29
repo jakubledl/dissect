@@ -55,7 +55,6 @@ abstract class AbstractLexer implements Lexer
      */
     public function lex($string)
     {
-        // normalize line endings
         $string = strtr($string, array("\r\n" => "\n", "\r" => "\n"));
 
         $tokens = array();
@@ -78,7 +77,6 @@ abstract class AbstractLexer implements Lexer
 
             $position += $shift;
 
-            // update line + offset
             if ($position > 0) {
                 $this->line = substr_count($originalString, "\n", 0, $position) + 1;
             }
@@ -87,7 +85,10 @@ abstract class AbstractLexer implements Lexer
         }
 
         if ($position !== $originalLength) {
-            throw new RecognitionException($this->line);
+            $lines = explode("\n", $originalString);
+            $errorLine = $lines[$this->line-1];
+            $linePosition = strpos($errorLine, $string);
+            throw new RecognitionException($string, $linePosition, $this->line);
         }
 
         $tokens[] = new CommonToken(Parser::EOF_TOKEN_TYPE, '', $this->line);
