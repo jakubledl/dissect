@@ -13,7 +13,7 @@ class RecognitionException extends RuntimeException
 {
     protected $parameter;
     protected $position;
-    protected $line;
+    protected $sourceLine;
 
     /**
      * Constructor.
@@ -26,7 +26,7 @@ class RecognitionException extends RuntimeException
     {
         $this->parameter = $parameter;
         $this->position = $position;
-        $this->line = $line;
+        $this->sourceLine = $line;
         $message = sprintf(
             'Invalid Parameter "%s" at line %d position %d',
             $parameter,
@@ -47,7 +47,7 @@ class RecognitionException extends RuntimeException
         return $this->position;
     }
 
-    public function getLine()
+    public function getSourceLine()
     {
         return $this->sourceLine;
     }
