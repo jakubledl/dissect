@@ -61,7 +61,7 @@ class AbstractLexerTest extends PHPUnit_Framework_TestCase
         } catch (RecognitionException $e) {
             $this->assertEquals(1, $e->getSourceLine());
             $this->assertEquals(3, $e->getPosition());
-            $this->assertEquals('abcd', $e->getParameter());
+            $this->assertEquals('d', $e->getParameter());
         }
     }
 
