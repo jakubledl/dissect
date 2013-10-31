@@ -39,7 +39,7 @@ class RecognitionException extends RuntimeException
 
     public function getParameter()
     {
-        return $this->parameter();
+        return $this->parameter;
     }
 
     public function getPosition()
