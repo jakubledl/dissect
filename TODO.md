@@ -4,7 +4,9 @@ Goals
 1.1
 ---
 
-- Optional operator precedence support (à la *yacc*, *bison*).
+- Optional operator precedence support (à la *yacc*, *bison*) - &#10004;
+- A performance-oriented regex lexer (based on doctrine/lexer) - &#10004;
+- An option to generate a hybrid recursive ascent parser - &#9633;
 
 1.0
 ---

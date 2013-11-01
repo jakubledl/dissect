@@ -4,6 +4,7 @@ namespace Dissect\Parser\LALR1\Analysis;
 
 use Dissect\Parser\LALR1\Analysis\Exception\ReduceReduceConflictException;
 use Dissect\Parser\LALR1\Analysis\Exception\ShiftReduceConflictException;
+use Dissect\Parser\LALR1\Analysis\KernelSet\KernelSet;
 use Dissect\Parser\Grammar;
 use Dissect\Parser\Parser;
 use Dissect\Util\Util;
@@ -47,12 +48,8 @@ class Analyzer
         // the queue of states that need processing
         $queue = new SplQueue();
 
-        // holds the origins of different states.
-        // an origin is a map 'rule number' -> 'unsorted rule positions'
-        $origins = array();
-
-        // states are numbered sequentially
-        $nextStateNumber = 0;
+        // the BST for state kernels
+        $kernelSet = new KernelSet();
 
         // rules grouped by their name
         $groupedRules = $grammar->getGroupedRules();
@@ -65,11 +62,13 @@ class Analyzer
         $pumpings = array();
 
         // the item from which the whole automaton
-        // is deriveed
+        // is derived
         $initialItem = new Item($grammar->getStartRule(), 0);
 
         // construct the initial state
-        $state = new State($nextStateNumber++, array($initialItem));
+        $state = new State($kernelSet->insert(array(
+            array($initialItem->getRule()->getNumber(), $initialItem->getDotIndex()),
+        )), array($initialItem));
 
         // the initial item automatically has EOF
         // as its lookahead
@@ -97,14 +96,14 @@ class Analyzer
                     $groupedItems[$component][] = $item;
 
                     // if nonterminal
-                    if (array_key_exists($component, $groupedRules)) {
+                    if ($grammar->hasNonterminal($component)) {
 
                         // calculate lookahead
                         $lookahead = array();
                         $cs = $item->getUnrecognizedComponents();
 
                         foreach ($cs as $i => $c) {
-                            if (!array_key_exists($c, $groupedRules)) {
+                            if (!$grammar->hasNonterminal($c)) {
                                 // if terminal, add it and break the loop
                                 $lookahead = Util::union($lookahead, array($c));
 
@@ -185,70 +184,23 @@ class Analyzer
 
             // calculate transitions
             foreach ($groupedItems as $thisComponent => $theseItems) {
-                $currentOrigin = array();
+                $newKernel = array();
 
                 foreach ($theseItems as $thisItem) {
-                    // calculate the origin of the state that
-                    // would result by the transition from this
-                    // state by $thisComponent
-                    $currentOrigin[$thisItem->getRule()->getNumber()][] =
-                        $thisItem->getDotIndex();
+                    $newKernel[] = array(
+                        $thisItem->getRule()->getNumber(),
+                        $thisItem->getDotIndex() + 1,
+                    );
                 }
 
-                $n = null;
+                $num = $kernelSet->insert($newKernel);
 
-                foreach ($origins as $number => $map) {
-                    $match = true;
-
-                    // the origins match iff the rules are same
-                    foreach ($currentOrigin as $ruleNum => $positions) {
-
-                        if (count($currentOrigin) !== count($map)
-                            || !isset($map[$ruleNum])
-                            // the comparison of positions is order-insensitive
-                            || (array_diff($map[$ruleNum], $positions) !== array_diff($positions, $map[$ruleNum]))) {
-                            $match = false;
-
-                            break;
-                        }
-                    }
-
-                    if ($match) {
-                        // if there was a match, the state already exists
-                        // and is identified by $number
-                        $n = $number;
-                        break;
-                    }
-                }
-
-                if ($n === null) {
-                    // no match, we have to create a new state
-                    $num = $nextStateNumber++;
-                    $newState = new State($num, array_map(function (Item $i) {
-                        $new = new Item($i->getRule(), $i->getDotIndex() + 1);
-
-                        // if there's a transition from state a to state b by
-                        // x, the rules A -> foo . x in state a and
-                        // A -> foo x . in state b are connected
-                        $i->connect($new);
-
-                        return $new;
-                    }, $theseItems));
-
-                    $automaton->addState($newState);
-                    $queue->enqueue($newState);
-
-                    // store the origin of the new state
-                    $origins[$num] = $currentOrigin;
-
+                if ($automaton->hasState($num)) {
+                    // the state already exists
                     $automaton->addTransition($state->getNumber(), $thisComponent, $num);
-                } else {
-                    // if there was a match, we have to extract
-                    // the following items from the existing state
-                    $automaton->addTransition($state->getNumber(), $thisComponent, $n);
 
-                    // which is this one
-                    $nextState = $automaton->getState($n);
+                    // extract the connected items from the target state
+                    $nextState = $automaton->getState($num);
 
                     foreach ($theseItems as $thisItem) {
                         $thisItem->connect(
@@ -258,6 +210,21 @@ class Analyzer
                             )
                         );
                     }
+                } else {
+                    // new state needs to be created
+                    $newState = new State($num, array_map(function (Item $i) {
+                        $new = new Item($i->getRule(), $i->getDotIndex() + 1);
+
+                        // connect the two items
+                        $i->connect($new);
+
+                        return $new;
+                    }, $theseItems));
+
+                    $automaton->addState($newState);
+                    $queue->enqueue($newState);
+
+                    $automaton->addTransition($state->getNumber(), $thisComponent, $num);
                 }
             }
         }
@@ -279,9 +246,9 @@ class Analyzer
      */
     protected function buildParseTable(Automaton $automaton, Grammar $grammar)
     {
-        $nonterminals = array_keys($grammar->getGroupedRules());
         $conflictsMode = $grammar->getConflictsMode();
         $conflicts = array();
+        $errors = array();
 
         // initialize the table
         $table = array(
@@ -291,7 +258,7 @@ class Analyzer
 
         foreach ($automaton->getTransitionTable() as $num => $transitions) {
             foreach ($transitions as $trigger => $destination) {
-                if (!in_array($trigger, $nonterminals)) {
+                if (!$grammar->hasNonterminal($trigger)) {
                     // terminal implies shift
                     $table['action'][$num][$trigger] = $destination;
                 } else {
@@ -311,11 +278,77 @@ class Analyzer
                     $ruleNumber = $item->getRule()->getNumber();
 
                     foreach ($item->getLookahead() as $token) {
+                        if (isset($errors[$num]) && isset($errors[$num][$token])) {
+                            // there was a previous conflict resolved as an error
+                            // entry for this token.
+
+                            continue;
+                        }
+
                         if (array_key_exists($token, $table['action'][$num])) {
                             // conflict
                             $instruction = $table['action'][$num][$token];
 
                             if ($instruction > 0) {
+                                if ($conflictsMode & Grammar::OPERATORS) {
+                                    if ($grammar->hasOperator($token)) {
+                                        $operatorInfo = $grammar->getOperatorInfo($token);
+
+                                        $rulePrecedence = $item->getRule()->getPrecedence();
+
+                                        // unless the rule has given precedence
+                                        if ($rulePrecedence === null) {
+                                            foreach (array_reverse($item->getRule()->getComponents()) as $c) {
+                                                // try to extract it from the rightmost terminal
+                                                if ($grammar->hasOperator($c)) {
+                                                    $ruleOperatorInfo = $grammar->getOperatorInfo($c);
+                                                    $rulePrecedence = $ruleOperatorInfo['prec'];
+
+                                                    break;
+                                                }
+                                            }
+                                        }
+
+                                        if ($rulePrecedence !== null) {
+                                            // if we actually have a rule precedence
+
+                                            $tokenPrecedence = $operatorInfo['prec'];
+
+                                            if ($rulePrecedence > $tokenPrecedence) {
+                                                // if the rule precedence is higher, reduce
+                                                $table['action'][$num][$token] = -$ruleNumber;
+                                            } elseif ($rulePrecedence < $tokenPrecedence) {
+                                                // if the token precedence is higher, shift
+                                                // (i.e. don't modify the table)
+                                            } else {
+                                                // precedences are equal, let's turn to associativity
+                                                $assoc = $operatorInfo['assoc'];
+
+                                                if ($assoc === Grammar::RIGHT) {
+                                                    // if right-associative, shift
+                                                    // (i.e. don't modify the table)
+                                                } elseif ($assoc === Grammar::LEFT) {
+                                                    // if left-associative, reduce
+                                                    $table['action'][$num][$token] = -$ruleNumber;
+                                                } elseif ($assoc === Grammar::NONASSOC) {
+                                                    // the token is nonassociative.
+                                                    // this actually means an input error, so
+                                                    // remove the shift entry from the table
+                                                    // and mark this as an explicit error
+                                                    // entry
+                                                    unset($table['action'][$num][$token]);
+                                                    $errors[$num][$token] = true;
+                                                }
+                                            }
+
+                                            continue; // resolved the conflict, phew
+                                        }
+
+                                        // we couldn't calculate the precedence => the conflict was not resolved
+                                        // move along.
+                                    }
+                                }
+
                                 // s/r
                                 if ($conflictsMode & Grammar::SHIFT) {
                                     $conflicts[] = array(

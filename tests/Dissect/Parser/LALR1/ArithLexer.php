@@ -12,8 +12,10 @@ class ArithLexer extends SimpleLexer
         $this->token('(');
         $this->token(')');
         $this->token('+');
+        $this->token('-');
         $this->token('**');
         $this->token('*');
+        $this->token('/');
         $this->regex('WSP', "/^[ \r\n\t]+/");
         $this->skip('WSP');
     }

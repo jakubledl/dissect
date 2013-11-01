@@ -8,41 +8,51 @@ class ArithGrammar extends Grammar
 {
     public function __construct()
     {
-        $this('Additive')
-            ->is('Additive', '+', 'Multiplicative')
+        $this('Expr')
+            ->is('Expr', '+', 'Expr')
             ->call(function ($l, $_, $r) {
                 return $l + $r;
             })
 
-            ->is('Multiplicative');
+            ->is('Expr', '-', 'Expr')
+            ->call(function ($l, $_, $r) {
+                return $l - $r;
+            })
 
-        $this('Multiplicative')
-            ->is('Multiplicative', '*', 'Power')
+            ->is('Expr', '*', 'Expr')
             ->call(function ($l, $_, $r) {
                 return $l * $r;
             })
 
-            ->is('Power');
+            ->is('Expr', '/', 'Expr')
+            ->call(function ($l, $_, $r) {
+                return $l / $r;
+            })
 
-        $this('Power')
-            ->is('Primary', '**', 'Power')
+            ->is('Expr', '**', 'Expr')
             ->call(function ($l, $_, $r) {
                 return pow($l, $r);
             })
 
-            ->is('Primary');
+            ->is('(', 'Expr', ')')
+            ->call(function ($_, $e, $_) {
+                return $e;
+            })
 
-        $this('Primary')
+            ->is('-', 'Expr')->prec(4)
+            ->call(function ($_, $e) {
+                return -$e;
+            })
+
             ->is('INT')
             ->call(function ($i) {
                 return (int)$i->getValue();
-            })
-
-            ->is('(', 'Additive', ')')
-            ->call(function ($_, $e, $_) {
-                return $e;
             });
 
-        $this->start('Additive');
+        $this->operators('+', '-')->left()->prec(1);
+        $this->operators('*', '/')->left()->prec(2);
+        $this->operators('**')->right()->prec(3);
+
+        $this->start('Expr');
     }
 }

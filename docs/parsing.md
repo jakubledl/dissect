@@ -134,113 +134,189 @@ class ArithLexer extends SimpleLexer
 $lexer = new ArithLexer();
 ```
 
-There's more to specifying mathematical expression than would seem,
-because there are two concepts to consider:
-
-1. Operator precedence
-2. Operator associativity
-
-The operator problem is usually solved in these steps:
-
-1. Create a hierarchy of your operators.
-2. Start creating rules from the lowest-precedence one to the
-   highest-precedence one, each "level" will reference rules
-   in the one above it.
-3. The highest operator will reference an atomic, nondividable
-   expression, which in our case is an `INT` or a parenthesised
-   expression.
-
-The lowest-precedence operator in our grammar is `+`, so we will start
-with two rules for `Additive`:
+As for the grammar, let's start out slow, with only a single operator:
 
 ```php
-$this('Additive')
-    ->is('Additive', '+', 'Multiplicative')
+$this('Expr')
+    ->is('Expr', '+', 'Expr')
     ->call(function ($l, $_, $r) {
         return $l + $r;
     })
 
-    ->is('Multiplicative');
-```
-
-Here we say "an additive expression is an additive expression plus a
-multiplicative expression, or simply a multiplicative expression.
-Note that we've taken care of associativity too: the first rule for
-`Additive` is left-recursive, which means that an input like this:
-
-    2 + 7 + 3
-
-will be interpreted as
-
-    (2 + 7) + 3
-
-which is exactly what we want to achieve.
-
-Let's take care of `Multiplicative` the same way:
-
-```php
-$this('Multiplicative')
-    ->is('Multiplicative', '*', 'Power')
-    ->call(function ($l, $_, $r) {
-        return $l * $r;
-    })
-
-    ->is('Power');
-```
-
-Again, we'll do the same for `Power`, but notice that we've made it
-right-recursive, since when we say
-
-    2 ** 3 ** 4
-
-we want it to mean
-
-    2 ** (3 ** 4)
-
-```php
-$this('Power')
-    ->is('Primary', '**', 'Power')
-    ->call(function ($l, $_, $r) {
-        return pow($left, $right);
-    })
-
-    ->is('Primary');
-```
-
-We've reached the highest-precedence operator, so now we have to define
-what a `Primary` expression is:
-
-```php
-$this('Primary')
-    ->is('(', 'Additive', ')')
-    ->call(function ($_, $e, $_) {
-        return $e;
-    })
-
     ->is('INT')
-    ->call(function ($int) {
-        return (int)$int->getValue();
+    ->call(function ($i) {
+        return (int)$i->getValue();
     });
+
+$this->start('Expr');
 ```
 
-Note that the callback for the last rule recieves a token, that is, a
-`Dissect\Lexer\Token` object, so we have to "unwrap" the value from it.
+These two rule specify an expression to be either two expression
+separated by a plus or simply an integer. The call to `start()`
+sets the starting rule of the grammar.
 
-Now we just specify a start rule:
-
-```php
-$this->start('Additive');
-```
-
-and parse away:
+Now, we can simply pass the grammar to a parser object:
 
 ```php
 use Dissect\Parser\LALR1\Parser;
 
 $parser = new Parser(new ArithGrammar());
-$stream = $lexer->lex('6 ** (1 + 1) ** 2 * (5 + 4)');
+$stream = $lexer->lex('1 + 2 + 3');
 echo $parser->parse($stream);
-// => 11664
+// => 6
+```
+
+and yay, it works!
+
+### Operator associativity
+
+Actually, it doesn't. It *seems* to work because addition happens to be
+commutative, but a problem appears once we add another rule to the
+grammar to represent subtraction:
+
+```php
+$this('Expr')
+    ->is('Expr', '+', 'Expr') ...
+
+    ->is('Expr', '-', 'Expr')
+    ->call(function ($l, $_, $r) {
+        return $l - $r;
+    })
+
+    ->is('INT') ...
+```
+
+The result looks like this:
+
+```php
+$stream = $lexer->lex('3 - 5 - 2');
+echo $parser->parse($stream);
+// => 0
+```
+
+Well, that's certainly incorrect. The problem is that our grammar
+actually contains a conflict (a *shift/reduce* conflict, if you're a fan
+of termini technici. See the [section on conflict resolution](#resolving-conflicts).)
+which Dissect automatically resolves in a way that makes our `+` and `-`
+operators right-associative. The problem is fortunately easy to solve:
+we have to mark them as left-associative operators:
+
+```php
+    ->is('INT') ...
+
+$this->operators('+', '-')->left();
+```
+
+This makes Dissect treat the two tokens in a special way, the conflict
+is resolved to represent left-associativity and the parser works correctly:
+
+```php
+$stream = $lexer->lex('3 - 5 - 2');
+echo $parser->parse($stream);
+// => -4
+```
+
+### Operator precedence
+
+Unfortunately, we're not out of the woods yet. When we add another two
+rules to represent multiplication and division, we see that the parser
+still makes mistakes:
+
+```php
+$this('Expr')
+    ...
+
+    ->is('Expr', '*', 'Expr')
+    ->call(function ($l, $_, $r) {
+        return $l * $r;
+    })
+
+    ->is('Expr', '/', 'Expr')
+    ->call(function ($l, $_, $r) {
+        return $l / $r;
+    })
+
+    ...
+
+    $this->operators('*', '/')->left();
+...
+
+$stream = $lexer->lex('2 + 3 * 5');
+echo $parser->parse($stream);
+// => 25
+```
+
+The problem is that Dissect doesn't know anything about the precedence
+of our operators. But we can, of course, provide the necessary information:
+
+```php
+$this->operators('+', '-')->left()->prec(1);
+$this->operators('*', '/')->left()->prec(2);
+
+...
+
+$stream = $lexer->lex('2 + 3 * 5');
+echo $parser->parse($stream);
+// => 17
+```
+
+The higher the integer passed to the `prec()` method, the higher the
+precedence of the specified operators.
+
+And we have the basic grammar for mathematical expressions in place!
+As an exercise, try to handle the rest of the tokens defined in the lexer:
+
+- Create a rule to handle parentheses around expressions.
+- Create a rule for the final operator, `**`, which represents
+  exponentiation. Give it the highest precedence and make it
+  *right-associative* (the method is, shockingly, called `right()`).
+
+### Specifying precedences on rules instead of operators
+
+As a final touch, we'd like to add a unary minus operator to our grammar:
+
+```php
+$this('Expr')
+    ...
+
+    ->is('-', 'Expr')
+    ->call(function ($_, $e) {
+        return -$e;
+    })
+    ...
+```
+
+But you might feel that something is amiss. Unary minus should have the
+highest precedence, but we've specified the precedence of `-` to be the
+lowest, actually. But don't worry, we can assign precedences directly to
+rules:
+
+```php
+$this('Expr')
+    ...
+
+    ->is('-', 'Expr')->prec(4) // higher than everything
+    ->call(function ($_, $e) {
+        return -$e;
+    })
+    ...
+```
+
+### Nonassociativity
+
+Apart from being left- or right-associative, operators can be
+nonassociative, which means that for an operator `op`, the input
+`a op b op c` means neither `(a op b) op c` or `a op (b op c)`,
+but is considered a syntax error.
+
+This has certain use cases; for instance, one of the nonassociative
+operators in the grammar for PHP is `<`: when parsing `1 < 2 < 3`,
+the PHP parser reports a syntax error.
+
+The corresponding method in Dissect grammars is `nonassoc()`:
+
+```php
+$this->operators('<', '>')->nonassoc()->prec(...);
 ```
 
 ### Describing common syntactic structures
@@ -330,19 +406,30 @@ that they contain 2 types of conflicts:
 - **Reduce/Reduce conflicts** - the parser can reduce by multiple
   grammar rules.
 
-There are 3 commonly used ways of resolving such conflicts and Dissect allows you to
+There are 4 commonly used ways of resolving such conflicts and Dissect allows you to
 combine them any way you want:
 
-1. On a shift/reduce conflict, always shift. This is represented by
-   the constant `Grammar::SHIFT` and is so common that Dissect enables
-   it by default.
+1. On a shift/reduce conflict, consult the operators precedence
+   and associativity information. The rules for resolution are a little
+   complicated, but the conflict may be resolved as a reduce (either the
+   precedence of the rule is higher than that of the shifted token or the
+   token is left-associative), a shift (the rule precedence is lower or the
+   token is right-associative) or even as an error (when the token is
+   nonassociative). Note that Dissect doesn't report conflicts resolved
+   using this technique, since they were intentionally created by the user
+   and therefore are not really conflicts. Represented by the
+   constant `Grammar::OPERATORS`.
 
-2. On a reduce/reduce conflict, reduce using the longer rule.
+2. On a shift/reduce conflict, always shift. This is represented by
+   the constant `Grammar::SHIFT` and, together with the above method,
+   is enabled by default.
+
+3. On a reduce/reduce conflict, reduce using the longer rule.
    Represented by `Grammar::LONGER_REDUCE`. Both this and the previous
    way represent the same philosophy: take the largest bite possible.
    This is usually what the user intended to express.
 
-3. On a reduce/reduce conflict, reduce using the rule that was
+4. On a reduce/reduce conflict, reduce using the rule that was
    declared earlier in the grammar. Represented by
    `Grammar::EARLIER_REDUCE`.
 
@@ -350,12 +437,13 @@ To specify precisely how should Dissect resolve parse table conflicts,
 call `resolve` on your grammar:
 
 ```php
-$this->resolve(Grammar::SHIFT | Grammar::LONGER_REDUCE);
+$this->resolve(Grammar::SHIFT | Grammar::OPERATORS | Grammar::LONGER_REDUCE);
 ```
 
 There are two other constants: `Grammar::NONE` that forbids any
-conflicts in the grammar and `Grammar::ALL`, which is a combination
-of all the 3 above methods defined simply for convenience.
+conflicts in the grammar (even the operators-related ones) and
+`Grammar::ALL`, which is a combination of all the 4 above methods
+defined simply for convenience.
 
 [twigparser]: https://github.com/fabpot/Twig/blob/master/lib/Twig/Parser.php
 [twig]: https://github.com/fabpot/Twig

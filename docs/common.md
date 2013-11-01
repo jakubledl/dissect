@@ -94,16 +94,36 @@ $this('Foo+')
 ...
 ```
 
+A note on left recursion
+------------------------
+
+One of the principal advantages of LR parsers over alternatives like LL
+or recursive descent is the ability to handle left-recursive rules,
+which are a natural expression of many grammar patterns. However, not
+only do LR parsers handle left recursion, they actually work *better*
+with left-recursive rules than with right-recursive ones in terms of
+memory, since a left-recursive rule can be recognized using a constant
+amount of memory, whereas for right-recursive rules, the amount of
+memory required grows lineary with each round of recursion.
+
+You may have noticed that all the examples above use left recursion for
+two reasons: efficiency and naturalness (you read arrays from left to
+right, not the other way around, right?).
+
+In short, when you *can* comfortably express your rule using left recursion,
+*do* so.
+
 Expressions
 -----------
 
 A grammar for very basic mathematical expressions is described in the
-[chapter on parsing][arith]. It would require extensive modifications to allow
-for other operators, function calls, unary operators, ternary
-operator(s), but there's a lot of grammars for practical programming
-languages on the internet that you can take inspiration from.
+[chapter on parsing][arith]. It would require some modifications to allow
+for other operators, function calls, ternary operator(s), but there's a
+lot of grammars for practical programming languages on the internet that
+you can take inspiration from.
 
-For starters, take a look at [this grammar][php-grammar] for PHP itself.
+For a familiar (although slighty less readable) example, take a look
+at [this grammar][php-grammar] for PHP itself.
 
 [php-grammar]: https://github.com/php/php-src/blob/master/Zend/zend_language_parser.y
 [arith]: parsing.md#example-parsing-mathematical-expressions

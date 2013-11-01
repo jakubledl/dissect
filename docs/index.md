@@ -13,6 +13,7 @@ This page serves as an index for individual documentation pages.
     1. [SimpleLexer](lexing.md#simplelexer)
     2. [StatefulLexer](lexing.md#statefullexer)
     3. [Improving lexer performance](lexing.md#improving-lexer-performance)
+    4. [RegexLexer](lexing.md#regexlexer)
 2. [Parsing with Dissect](parsing.md)
     1. [Why an LALR(1) parser?](parsing.md#why-an-lalr1-parser)
     2. [Writing a grammar](parsing.md#writing-a-grammar)
