@@ -8,7 +8,36 @@ class ArithGrammar extends Grammar
 {
     public function __construct()
     {
+        $this('Expr*')
+            ->is('Expr+')
+            
+            ->is()
+            ->call(function() {
+                return array();
+            });
+
+        $this('Expr+')
+            ->is('Expr+', ',', 'Expr')
+            ->call(function ($list, $_, $argument) {
+                $list[] = $argument;
+
+                return $list;
+            })
+            
+            ->is('Expr')
+            ->call(function($argument) {
+                return array($argument);
+            });
+
+        $this('Function')
+            ->is('Add(', 'Expr*', ')')
+            ->call(function($add, $params, $_) {
+                return array_sum($params);
+            });
+
         $this('Expr')
+            ->is('Function')
+
             ->is('Expr', '+', 'Expr')
             ->call(function ($l, $_, $r) {
                 return $l + $r;

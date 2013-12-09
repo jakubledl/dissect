@@ -11,6 +11,7 @@ class ArithLexer extends SimpleLexer
         $this->regex('INT', '/^[1-9][0-9]*/');
         $this->token('(');
         $this->token(')');
+        $this->token(',');
         $this->token('+');
         $this->token('-');
         $this->token('**');
@@ -18,5 +19,6 @@ class ArithLexer extends SimpleLexer
         $this->token('/');
         $this->regex('WSP', "/^[ \r\n\t]+/");
         $this->skip('WSP');
+        $this->token('Add(');
     }
 }

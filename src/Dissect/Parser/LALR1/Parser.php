@@ -77,8 +77,12 @@ class Parser implements P\Parser
                     $rule = $this->grammar->getRule(-$action);
                     $popCount = count($rule->getComponents());
 
-                    array_splice($stateStack, -$popCount);
-                    $newArgs = array_splice($args, -$popCount);
+                    $newArgs = $args;
+
+                    if ($popCount > 0) {
+                        array_splice($stateStack, -$popCount);
+                        $newArgs = array_splice($args, -$popCount);
+                    }
 
                     if ($callback = $rule->getCallback()) {
                         $args[] = call_user_func_array($callback, $newArgs);

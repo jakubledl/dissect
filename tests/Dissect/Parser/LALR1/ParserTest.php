@@ -37,6 +37,22 @@ class ParserTest extends PHPUnit_Framework_TestCase
     /**
      * @test
      */
+    public function parserShouldProcessTokenStreamWithMultipleArgs()
+    {
+        $this->assertEquals(5, $this->parser->parse($this->lexer->lex('Add(1, 2, 2)')));
+    }
+
+    /**
+     * @test
+     */
+    public function parserShouldProcessTokenStreamWithNoArgs()
+    {
+        $this->assertEquals(0, $this->parser->parse($this->lexer->lex('Add()')));
+    }
+
+    /**
+     * @test
+     */
     public function parserShouldThrowAnExceptionOnInvalidInput()
     {
         try {
@@ -44,11 +60,11 @@ class ParserTest extends PHPUnit_Framework_TestCase
             $this->fail('Expected an UnexpectedTokenException.');
         } catch (UnexpectedTokenException $e) {
             $this->assertEquals('INT', $e->getToken()->getType());
-            $this->assertEquals(array('$eof', '+', '-', '*', '/', '**', ')'), $e->getExpected());
+            $this->assertEquals(array('$eof', '+', '-', '*', '/', '**', ')', ','), $e->getExpected());
             $this->assertEquals(<<<EOT
 Unexpected 3 (INT) at line 1.
 
-Expected one of \$eof, +, -, *, /, **, ).
+Expected one of \$eof, +, -, *, /, **, ), ,.
 EOT
             , $e->getMessage());
         }
