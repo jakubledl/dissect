@@ -2,8 +2,6 @@
 
 namespace Dissect\Node;
 
-use RuntimeException;
-
 /**
  * An AST node.
  *
@@ -25,12 +23,12 @@ class CommonNode implements Node
      * Constructor.
      *
      * @param array $attributes The attributes of this node.
-     * @param array $children The children of this node.
+     * @param array $nodes      The children of this node.
      */
     public function __construct(array $attributes = array(), array $nodes = array())
     {
         $this->attributes = $attributes;
-        $this->nodes = $nodes;
+        $this->nodes      = $nodes;
     }
 
     /**
@@ -54,8 +52,8 @@ class CommonNode implements Node
      */
     public function getNode($key)
     {
-        if (!isset($this->children[$key])) {
-            throw new RuntimeException(sprintf('No child node "%s" exists.', $key));
+        if (!isset($this->nodes[$key])) {
+            throw new \RuntimeException(sprintf('No child node "%s" exists.', $key));
         }
 
         return $this->nodes[$key];
@@ -99,7 +97,7 @@ class CommonNode implements Node
     public function getAttribute($key)
     {
         if (!isset($this->attributes[$key])) {
-            throw new RuntimeException(sprintf('No attribute "%s" exists.', $key));
+            throw new \RuntimeException(sprintf('No attribute "%s" exists.', $key));
         }
 
         return $this->attributes[$key];
@@ -121,13 +119,19 @@ class CommonNode implements Node
         unset($this->attributes[$key]);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function count()
     {
-        return count($this->children);
+        return count($this->nodes);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getIterator()
     {
-        return new ArrayIterator($this->children);
+        return new \ArrayIterator($this->nodes);
     }
 }
