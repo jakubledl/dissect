@@ -2,15 +2,12 @@
 
 namespace Dissect\Node;
 
-use Countable;
-use IteratorAggregate;
-
 /**
  * A basic contract for a node in an AST.
  *
  * @author Jakub Lédl <jakubledl@gmail.com>
  */
-interface Node extends Countable, IteratorAggregate
+interface Node extends \Countable, \IteratorAggregate
 {
     /**
      * Returns the children of this node.
@@ -42,8 +39,8 @@ interface Node extends Countable, IteratorAggregate
     /**
      * Sets a child node.
      *
-     * @param string $name The name.
-     * @param \Dissect\Node\Node $node The new child node.
+     * @param string             $name  The name.
+     * @param \Dissect\Node\Node $child The new child node.
      */
     public function setNode($name, Node $child);
 
@@ -66,6 +63,7 @@ interface Node extends Countable, IteratorAggregate
      * under $key.
      *
      * @param string $key The key.
+     *
      * @return boolean Whether there's an attribute under $key.
      */
     public function hasAttribute($key);
@@ -74,6 +72,7 @@ interface Node extends Countable, IteratorAggregate
      * Gets an attribute by key.
      *
      * @param string $key The key.
+     *
      * @return mixed The attribute value.
      *
      * @throws \RuntimeException When no attribute exists under $key.
